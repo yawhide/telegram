@@ -11,3 +11,6 @@ https://androidkennel.org/android-networking-tutorial-with-asynctask/
 
 ### what stefan used to get location
 https://github.com/miskoajkula/Gps_location/blob/master/app/src/main/java/testing/gps_location/MainActivity.java
+
+### another more full tutorial on how to get location
+http://www.tutorialspoint.com/android/android_location_based_services.htm
