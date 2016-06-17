@@ -92,11 +92,15 @@ ENV/
 .ropeproject
 .DS_Store
 
-*.iml
-.gradle
-/local.properties
-/.idea
-.DS_Store
-/build
-/captures
+Telegram/*.iml
+Telegram/.gradle
+Telegram//local.properties
+Telegram//.idea
+Telegram/.DS_Store
+Telegram//build
+Telegram//captures
 android/.idea
+YawHide/
+Sunshine/
+ic_add_black_24dp/
+.metadata/
