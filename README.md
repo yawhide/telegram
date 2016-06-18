@@ -17,3 +17,6 @@ https://github.com/miskoajkula/Gps_location/blob/master/app/src/main/java/testin
 
 ### another more full tutorial on how to get location
 http://www.tutorialspoint.com/android/android_location_based_services.htm
+
+### import a jar
+http://stackoverflow.com/questions/16608135/android-studio-add-jar-as-library
