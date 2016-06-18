@@ -94,12 +94,12 @@ ENV/
 
 Telegram/*.iml
 Telegram/.gradle
-Telegram//local.properties
-Telegram//.idea
+Telegram/local.properties
+Telegram/.idea/
 Telegram/.DS_Store
-Telegram//build
-Telegram//captures
-android/.idea
+Telegram/build/
+Telegram/captures/
+android/.idea/
 YawHide/
 Sunshine/
 ic_add_black_24dp/
