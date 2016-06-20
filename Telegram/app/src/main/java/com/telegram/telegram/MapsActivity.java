@@ -1,15 +1,19 @@
 package com.telegram.telegram;
 
+import android.content.Context;
 import android.content.pm.PackageManager;
 import android.location.Location;
 import android.location.LocationManager;
 import android.location.LocationListener;
 import android.os.Build;
+import android.provider.Settings;
 import android.support.design.widget.FloatingActionButton;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.app.FragmentActivity;
 import android.os.Bundle;
 import android.support.v4.content.ContextCompat;
+import android.text.TextUtils;
+import android.util.Log;
 import android.view.View;
 import android.widget.Toast;
 
@@ -21,6 +25,7 @@ import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.MarkerOptions;
 
 import java.io.IOException;
+import java.util.Map;
 
 import okhttp3.Call;
 import okhttp3.Callback;
@@ -75,11 +80,27 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
                 MapsActivity.this.runOnUiThread(new Runnable() {
                     @Override
                     public void run() {
-                        System.out.println(responseData);
+                        Log.d("t", responseData);
                     }
                 });
             }
         });
+    }
+
+    public static boolean isLocationEnabled(Context context) {
+        int locationMode = 0;
+        String locationProviders;
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT){
+            try {
+                locationMode = Settings.Secure.getInt(context.getContentResolver(), Settings.Secure.LOCATION_MODE);
+            } catch (Settings.SettingNotFoundException e) {
+                e.printStackTrace();
+            }
+            return locationMode != Settings.Secure.LOCATION_MODE_OFF;
+        } else {
+            locationProviders = Settings.Secure.getString(context.getContentResolver(), Settings.Secure.LOCATION_PROVIDERS_ALLOWED);
+            return !TextUtils.isEmpty(locationProviders);
+        }
     }
 
     @Override
@@ -95,24 +116,28 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
         fab.setOnClickListener(new View.OnClickListener(){
             @Override
             public void onClick(View view) {
-                System.out.println("ayee");
+                Log.d("t", "ayee");
                 try {
                     get("http://107.22.150.246:5000");
                 } catch (IOException e) {
                     e.printStackTrace();
                 }
-
-
             }
         });
+
+        final Context that = this;
 
         mLocationListener = new LocationListener() {
             @Override
             public void onLocationChanged(final Location location) {
                 double lat = location.getLatitude(), lon = location.getLongitude();
-                System.out.printf("%f %f\n", lat, lon);
+                LatLng newPos = new LatLng(lat, lon);
+                Log.d("t", lat + " " + lon + " " + newPos.toString());
                 // location changes here
+                Toast.makeText(that, "New lat/lon: " + lat + " " + lon, Toast.LENGTH_LONG).show();
 
+                mMap.addMarker(new MarkerOptions().position(newPos));
+                mMap.moveCamera(CameraUpdateFactory.newLatLng(newPos));
             }
 
             @Override
@@ -122,25 +147,48 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
 
             @Override
             public void onProviderEnabled(String provider) {
-
+                Log.d("t", "on provider enabled...");
             }
 
             @Override
             public void onProviderDisabled(String provider) {
                 // not sure what should go here, i thin kwe restart the activity?
+                Log.d("t", "on provider disabled... they dont have location services on");
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+                    if (ContextCompat.checkSelfPermission(MapsActivity.this, android.Manifest.permission.ACCESS_FINE_LOCATION)
+                            != PackageManager.PERMISSION_GRANTED) {
+                        Log.d("t", "they do not have location services on");
+                        ActivityCompat.requestPermissions(MapsActivity.this, new String[]{
+                                android.Manifest.permission.ACCESS_FINE_LOCATION, android.Manifest.permission.ACCESS_COARSE_LOCATION,
+                                android.Manifest.permission.INTERNET
+                        }, 10);
+                    }
+                } else {
+                    if (isLocationEnabled(MapsActivity.this)) {
+                        Toast.makeText(MapsActivity.this, "Must have location services on", Toast.LENGTH_LONG).show();
+                    } else {
+                        Log.d("t", "user does not have location on");
+                    }
+                }
             }
         };
         mLocationManager = (LocationManager) getSystemService(LOCATION_SERVICE);
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
             if (ContextCompat.checkSelfPermission(this, android.Manifest.permission.ACCESS_FINE_LOCATION)
                     != PackageManager.PERMISSION_GRANTED) {
-                ActivityCompat.requestPermissions(this, new String[] {
+                Log.d("t", "they do not have location services on");
+                ActivityCompat.requestPermissions(this, new String[]{
                         android.Manifest.permission.ACCESS_FINE_LOCATION, android.Manifest.permission.ACCESS_COARSE_LOCATION,
                         android.Manifest.permission.INTERNET
                 }, 10);
             }
         } else {
-            mLocationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER, 5000, 0, mLocationListener);
+            if (isLocationEnabled(MapsActivity.this)) {
+                mLocationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER, 5000, 0, mLocationListener);
+            } else {
+                Log.d("t", "need to check if they have location on");
+            }
+
         }
     }
 
@@ -184,7 +232,7 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
                 if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
                     // All good!
                 } else {
-                    Toast.makeText(this, "Need your location!", Toast.LENGTH_SHORT).show();
+                    Toast.makeText(this, "Need your location!", Toast.LENGTH_LONG).show();
                 }
 
                 break;
