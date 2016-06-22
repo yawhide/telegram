@@ -44,8 +44,7 @@ def drop_telegram():
 
   telegram = Telegram (uid, msg, img, lat, lng)
   result = db.telegrams.insert_one(telegram.__dict__)
-  print result.inserted_id
-  return 'inserted telegram'
+  return result.inserted_id
 
 if __name__ == "__main__":
     app.run(host='0.0.0.0', port=5000)
