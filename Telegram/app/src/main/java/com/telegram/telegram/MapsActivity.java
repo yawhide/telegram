@@ -228,11 +228,11 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
             Log.d("t", "THIS IS FROM MESSAGE DIALOG: " + telegramMessage);
 
             RequestBody formBody = new FormBody.Builder()
-                    .add("uid", "Stefanovic")
+                    .add("uid", "Shayanovic")
                     .add("msg", telegramMessage)
                     .add("img", "nada")
-                    .add("lat", "43.4807540")
-                    .add("lng", "-80.5242860")
+                    .add("lat", String.valueOf(lastLat))
+                    .add("lng", String.valueOf(lastLon))
                     .build();
 
             try {
