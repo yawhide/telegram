@@ -24,7 +24,9 @@ import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.OnMapReadyCallback;
 import com.google.android.gms.maps.SupportMapFragment;
+import com.google.android.gms.maps.model.BitmapDescriptorFactory;
 import com.google.android.gms.maps.model.LatLng;
+import com.google.android.gms.maps.model.Marker;
 import com.google.android.gms.maps.model.MarkerOptions;
 
 import java.io.IOException;
@@ -49,9 +51,7 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
     public static final String SERVER_URI = "http://ubuntu@ec2-107-22-150-246.compute-1.amazonaws.com:5000/";
     private BroadcastReceiver broadcastReceiver;
 
-    private double lastLat;
-    private double lastLon;
-
+    private double lastLat, lastLng;
 
     public static final MediaType JSON = MediaType.parse("application/json; charset=utf-8");
 
@@ -119,20 +119,6 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
         });
     }
 
-    public static boolean isLocationEnabledLegacy(Context context) {
-        int locationMode = 0;
-        String locationProviders;
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT){
-            try {
-                locationMode = Settings.Secure.getInt(context.getContentResolver(), Settings.Secure.LOCATION_MODE);
-            } catch (Settings.SettingNotFoundException e) {
-                e.printStackTrace();
-            }
-            return locationMode != Settings.Secure.LOCATION_MODE_OFF;
-        }
-        return false;
-    }
-
     @Override
     protected void onResume() {
         super.onResume();
@@ -142,10 +128,10 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
                 public void onReceive(Context context, Intent intent) {
                     String []split = intent.getExtras().getString("coordinates").split(" ");
                     lastLat = Double.parseDouble(split[0]);
-                    lastLon = Double.parseDouble(split[1]);
-                    Log.d("t", "updated lat/lon..." + lastLat + " " + lastLon);
-                    Toast.makeText(MapsActivity.this, lastLat + " " + lastLon, Toast.LENGTH_LONG).show();
-                    mMap.moveCamera(CameraUpdateFactory.newLatLng(new LatLng(lastLat, lastLon)));
+                    lastLng = Double.parseDouble(split[1]);
+                    Log.d("t", "updated lat/lon..." + lastLat + " " + lastLng);
+                    Toast.makeText(MapsActivity.this, lastLat + " " + lastLng, Toast.LENGTH_LONG).show();
+                    mMap.moveCamera(CameraUpdateFactory.newLatLng(new LatLng(lastLat, lastLng)));
                 }
             };
         }
@@ -173,9 +159,7 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
         fab.setOnClickListener(new View.OnClickListener(){
             @Override
             public void onClick(View view) {
-                // This method call initalizes a new activity and when the 2nd activity returns
-                // it calls onActivityResult
-                startActivityForResult(new Intent(getApplicationContext(), TelegramMessage.class), 123);
+            startActivityForResult(new Intent(getApplicationContext(), TelegramMessage.class), 123);
             }
         });
 
@@ -232,7 +216,7 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
                     .add("msg", telegramMessage)
                     .add("img", "nada")
                     .add("lat", String.valueOf(lastLat))
-                    .add("lng", String.valueOf(lastLon))
+                    .add("lng", String.valueOf(lastLng))
                     .build();
 
             try {
@@ -241,9 +225,6 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
             catch (IOException e) {
                 e.printStackTrace();
             }
-
-
-
             /*  Do some shit here that actually posts the data
 
             try {
@@ -277,6 +258,18 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
     }
 
 //    @Override
+//    public void OnMarkerClickListener(Marker marker) {
+//
+//    }
+//
+//    private void addTelegramToMap(Telegram telegram) {
+//        mMap.addMarker(new MarkerOptions()
+//                .position(new LatLng(telegram.lat, telegram.lng))
+//                .icon(BitmapDescriptorFactory.fromResource(R.drawable.arrow))
+//        );
+//    }
+
+//    @Override
 //    protected void onStart() {
 //        super.onStart();
 //        if (googleApiClient != null) {
@@ -302,5 +295,4 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
             }
         }
     }
-
 }

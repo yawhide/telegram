@@ -9,9 +9,6 @@ import android.widget.EditText;
 import android.view.View;
 import android.util.Log;
 
-/**
- * Created by Avie on 2016-06-22.
- */
 public class TelegramMessage extends Activity {
     private EditText editText;
     private Button cancelButton;
