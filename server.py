@@ -4,7 +4,7 @@ from bson.json_util import dumps
 
 app = Flask(__name__)
 app.debug = True
-master_db = 'test_telgram1'
+master_db = 'test_telgram2'
 client = MongoClient()
 db = client[master_db]
 db.telegrams.create_index([("loc", '2dsphere')])
@@ -14,7 +14,7 @@ class Telegram (object):
     self.uid = uid
     self.msg = msg
     self.img = img
-    self.loc = {"lon": lng, "lat": lat}
+    self.loc = {"type":"Point", "coordinates": [float(lng),float(lat)]}
 
 @app.route('/telegrams/all', methods=['GET'])
 def getAll():
@@ -22,16 +22,16 @@ def getAll():
   cursor = coll.find()
   return dumps(cursor)
 
+# The radius has to be in miles -- currently defaulted to 1 mile 
+# 200m radius might be too small. Unlockable : 1 mile, Observable : 2 miles
 @app.route('/telegrams/within', methods=['GET'])
 def getTelegramsWithin ():
   lat = request.args.get('lat')
   lng = request.args.get ('lng')
-  # Radius in miles
   rad = request.args.get('rad')
   query = {"loc": {"$geoWithin": {"$centerSphere": [[float(lng), float(lat)], float(rad)/3963.2 ]}}}
-  for t in db.telegrams.find(query).sort('_id'):
-    print repr (t)
-  return 'hi'
+  cursor = db.telegrams.find(query).sort('_id')
+  return dumps(cursor) 
 
 
 @app.route('/drop', methods=['POST'])
