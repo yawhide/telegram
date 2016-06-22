@@ -14,6 +14,7 @@ class Telegram (object):
     self.uid = uid
     self.msg = msg
     self.img = img
+    print lat, lng
     self.loc = {"type":"Point", "coordinates": [float(lng),float(lat)]}
 
 @app.route('/telegrams/all', methods=['GET'])
@@ -26,9 +27,9 @@ def getAll():
 # 200m radius might be too small. Unlockable : 1 mile, Observable : 2 miles
 @app.route('/telegrams/within', methods=['GET'])
 def getTelegramsWithin ():
-  lat = request.args.get('lat')
-  lng = request.args.get ('lng')
-  rad = request.args.get('rad')
+  lat = request.form.get('lat')
+  lng = request.form.get ('lng')
+  rad = request.form.get('rad')
   query = {"loc": {"$geoWithin": {"$centerSphere": [[float(lng), float(lat)], float(rad)/3963.2 ]}}}
   cursor = db.telegrams.find(query).sort('_id')
   return dumps(cursor) 
@@ -36,15 +37,15 @@ def getTelegramsWithin ():
 
 @app.route('/drop', methods=['POST'])
 def drop_telegram():
-  uid = request.args.get('uid')
-  msg = request.args.get('msg')
-  img = request.args.get('img')
-  lat = request.args.get('lat')
-  lng = request.args.get ('lng')
+  uid = request.form.get('uid')
+  msg = request.form.get('msg')
+  img = request.form.get('img')
+  lat = request.form.get('lat')
+  lng = request.form.get ('lng')
 
   telegram = Telegram (uid, msg, img, lat, lng)
   result = db.telegrams.insert_one(telegram.__dict__)
-  return result.inserted_id
+  return dumps(result.inserted_id)
 
 if __name__ == "__main__":
     app.run(host='0.0.0.0', port=5000)

@@ -4,14 +4,14 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.location.Location;
-import android.location.LocationManager;
 import android.location.LocationListener;
+import android.location.LocationManager;
 import android.os.Build;
+import android.os.Bundle;
 import android.provider.Settings;
 import android.support.design.widget.FloatingActionButton;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.app.FragmentActivity;
-import android.os.Bundle;
 import android.support.v4.content.ContextCompat;
 import android.text.TextUtils;
 import android.util.Log;
@@ -26,10 +26,11 @@ import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.MarkerOptions;
 
 import java.io.IOException;
-import java.util.Map;
 
 import okhttp3.Call;
 import okhttp3.Callback;
+import okhttp3.FormBody;
+import okhttp3.HttpUrl;
 import okhttp3.MediaType;
 import okhttp3.OkHttpClient;
 import okhttp3.Request;
@@ -41,20 +42,50 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
     private GoogleMap mMap;
     private LocationManager mLocationManager;
     private LocationListener mLocationListener;
+    public static final String SERVER_URI = "http://ubuntu@ec2-107-22-150-246.compute-1.amazonaws.com:5000/";
 
     public static final MediaType JSON = MediaType.parse("application/json; charset=utf-8");
 
     OkHttpClient client = new OkHttpClient();
 
-    String post(String url, String json) throws IOException {
-        RequestBody body = RequestBody.create(JSON, json);
+    void post(String url, RequestBody formBody) throws IOException {
+
+        formBody = new FormBody.Builder()
+                .add("uid", "NERD")
+                .add("msg", "i r nerd")
+                .add("img", "nada")
+                .add("lat", "43.432540")
+                .add ("lng", "-80.522320")
+                .build();
+
         Request request = new Request.Builder()
                 .url(url)
-                .post(body)
+                .post(formBody)
                 .build();
-        try (Response response = client.newCall(request).execute()) {
-            return response.body().string();
-        }
+
+        client.newCall(request).enqueue(new Callback() {
+            @Override
+            public void onFailure(Call call, IOException e) {
+                e.printStackTrace();
+            }
+
+            @Override
+            public void onResponse(Call call, final Response response) throws IOException {
+                if (!response.isSuccessful()) {
+                    throw new IOException("Unexpected code " + response);
+                }
+                // Read data on the worker thread
+                final String responseData = response.body().string();
+
+                // Run view-related code back on the main thread
+                MapsActivity.this.runOnUiThread(new Runnable() {
+                    @Override
+                    public void run() {
+                        Log.d("t", responseData);
+                    }
+                });
+            }
+        });
     }
 
     void get(String url) throws IOException {
@@ -202,7 +233,25 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
             // Do some error checking on the message, ie. make sure its not bullshit or blank
             Log.d("t", "THIS IS FROM MESSAGE DIALOG: " + telegramMessage);
 
+            RequestBody formBody = new FormBody.Builder()
+                    .add("uid", "Stefanovic")
+                    .add("msg", "i r nerd")
+                    .add("img", "nada")
+                    .add("lat", "43.4807540")
+                    .add("lng", "-80.5242860")
+                    .build();
+
+            try {
+                post(SERVER_URI + "drop", formBody);
+            }
+            catch (IOException e) {
+                e.printStackTrace();
+            }
+
+
+
             /*  Do some shit here that actually posts the data
+
             try {
                 get("http://107.22.150.246:5000");
             } catch (IOException e) {
