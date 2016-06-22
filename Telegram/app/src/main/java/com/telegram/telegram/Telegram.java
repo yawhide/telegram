@@ -1,14 +1,12 @@
 package com.telegram.telegram;
 
-/**
- * Created by Avie on 2016-06-22.
- */
 public class Telegram {
-    Double uid;
-    String msg;
-    String img;
-    Double lat;
-    Double lng;
+
+    private Double uid;
+    private String msg;
+    private String img;
+    private Double lat;
+    private Double lng;
 
     // This is the constructor of the class Employee
     public Telegram(Double uid, String msg, String img, Double lat, Double lng) {
@@ -18,4 +16,6 @@ public class Telegram {
         this.lat = lat;
         this.lng = lng;
     }
+
+
 }
