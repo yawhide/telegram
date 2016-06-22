@@ -92,12 +92,12 @@ ENV/
 .ropeproject
 .DS_Store
 
-# Android stuff
+
+## Android stuff
 
 Telegram/*.iml
-Telegram/.gradle
+Telegram/.gradle/
 Telegram/local.properties
-Telegram/.idea/
 Telegram/.DS_Store
 Telegram/build/
 Telegram/captures/
@@ -105,3 +105,19 @@ YawHide/
 Sunshine/
 ic_add_black_24dp/
 .metadata/
+
+# Android User-specific configurations
+Telegram/.idea/libraries/
+Telegram/.idea/workspace.xml
+Telegram/.idea/tasks.xml
+Telegram/.idea/.name
+Telegram/.idea/compiler.xml
+Telegram/.idea/copyright/profiles_settings.xml
+Telegram/.idea/encodings.xml
+Telegram/.idea/misc.xml
+Telegram/.idea/modules.xml
+Telegram/.idea/scopes/scope_settings.xml
+Telegram/.idea/vcs.xml
+
+
+
