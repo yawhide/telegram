@@ -17,3 +17,6 @@ http://www.tutorialspoint.com/android/android_location_based_services.htm
 
 ### import a jar
 http://stackoverflow.com/questions/16608135/android-studio-add-jar-as-library
+
+### Android video tutorials
+https://www.youtube.com/user/miskoajkula94/videos

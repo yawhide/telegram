@@ -1,6 +1,7 @@
 package com.telegram.telegram;
 
 import android.content.Context;
+import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.location.Location;
 import android.location.LocationManager;
@@ -116,12 +117,9 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
         fab.setOnClickListener(new View.OnClickListener(){
             @Override
             public void onClick(View view) {
-                Log.d("t", "ayee");
-                try {
-                    get("http://107.22.150.246:5000");
-                } catch (IOException e) {
-                    e.printStackTrace();
-                }
+                // This method call initalizes a new activity and when the 2nd activity returns
+                // it calls onActivityResult
+                startActivityForResult(new Intent(getApplicationContext(), TelegramMessage.class), 123);
             }
         });
 
@@ -189,6 +187,28 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
                 Log.d("t", "need to check if they have location on");
             }
 
+        }
+    }
+
+    @Override
+    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+
+        // Request code has to match the activity code it was called with
+        if(requestCode == 123 && resultCode == RESULT_OK) {
+            Log.d("t", "got data from message activity, now post it");
+            // Extract the inputted text from the user
+            String telegramMessage = data.getStringExtra("message");
+
+            // Do some error checking on the message, ie. make sure its not bullshit or blank
+            Log.d("t", "THIS IS FROM MESSAGE DIALOG: " + telegramMessage);
+
+            /*  Do some shit here that actually posts the data
+            try {
+                get("http://107.22.150.246:5000");
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+            */
         }
     }
 
