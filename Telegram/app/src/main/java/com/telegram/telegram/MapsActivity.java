@@ -1,7 +1,9 @@
 package com.telegram.telegram;
 
+import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
+import android.content.IntentFilter;
 import android.content.pm.PackageManager;
 import android.location.Location;
 import android.location.LocationListener;
@@ -27,6 +29,8 @@ import com.google.android.gms.maps.model.MarkerOptions;
 
 import java.io.IOException;
 
+
+
 import okhttp3.Call;
 import okhttp3.Callback;
 import okhttp3.FormBody;
@@ -43,6 +47,11 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
     private LocationManager mLocationManager;
     private LocationListener mLocationListener;
     public static final String SERVER_URI = "http://ubuntu@ec2-107-22-150-246.compute-1.amazonaws.com:5000/";
+    private BroadcastReceiver broadcastReceiver;
+
+    private double lastLat;
+    private double lastLon;
+
 
     public static final MediaType JSON = MediaType.parse("application/json; charset=utf-8");
 
@@ -119,7 +128,7 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
         });
     }
 
-    public static boolean isLocationEnabled(Context context) {
+    public static boolean isLocationEnabledLegacy(Context context) {
         int locationMode = 0;
         String locationProviders;
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT){
@@ -129,9 +138,34 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
                 e.printStackTrace();
             }
             return locationMode != Settings.Secure.LOCATION_MODE_OFF;
-        } else {
-            locationProviders = Settings.Secure.getString(context.getContentResolver(), Settings.Secure.LOCATION_PROVIDERS_ALLOWED);
-            return !TextUtils.isEmpty(locationProviders);
+        }
+        return false;
+    }
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+        if(broadcastReceiver == null){
+            broadcastReceiver = new BroadcastReceiver() {
+                @Override
+                public void onReceive(Context context, Intent intent) {
+                    String []split = intent.getExtras().getString("coordinates").split(" ");
+                    lastLat = Double.parseDouble(split[0]);
+                    lastLon = Double.parseDouble(split[1]);
+                    Log.d("t", "updated lat/lon..." + lastLat + " " + lastLon);
+                    Toast.makeText(MapsActivity.this, lastLat + " " + lastLon, Toast.LENGTH_LONG).show();
+                    mMap.moveCamera(CameraUpdateFactory.newLatLng(new LatLng(lastLat, lastLon)));
+                }
+            };
+        }
+        registerReceiver(broadcastReceiver, new IntentFilter("location_update"));
+    }
+
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+        if(broadcastReceiver != null){
+            unregisterReceiver(broadcastReceiver);
         }
     }
 
@@ -156,69 +190,38 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
 
         final Context that = this;
 
-        mLocationListener = new LocationListener() {
-            @Override
-            public void onLocationChanged(final Location location) {
-                double lat = location.getLatitude(), lon = location.getLongitude();
-                LatLng newPos = new LatLng(lat, lon);
-                Log.d("t", lat + " " + lon + " " + newPos.toString());
-                // location changes here
-                Toast.makeText(that, "New lat/lon: " + lat + " " + lon, Toast.LENGTH_LONG).show();
-
-                mMap.addMarker(new MarkerOptions().position(newPos));
-                mMap.moveCamera(CameraUpdateFactory.newLatLng(newPos));
-            }
-
-            @Override
-            public void onStatusChanged(String provider, int status, Bundle extras) {
-
-            }
-
-            @Override
-            public void onProviderEnabled(String provider) {
-                Log.d("t", "on provider enabled...");
-            }
-
-            @Override
-            public void onProviderDisabled(String provider) {
-                // not sure what should go here, i thin kwe restart the activity?
-                Log.d("t", "on provider disabled... they dont have location services on");
-                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-                    if (ContextCompat.checkSelfPermission(MapsActivity.this, android.Manifest.permission.ACCESS_FINE_LOCATION)
-                            != PackageManager.PERMISSION_GRANTED) {
-                        Log.d("t", "they do not have location services on");
-                        ActivityCompat.requestPermissions(MapsActivity.this, new String[]{
-                                android.Manifest.permission.ACCESS_FINE_LOCATION, android.Manifest.permission.ACCESS_COARSE_LOCATION,
-                                android.Manifest.permission.INTERNET
-                        }, 10);
-                    }
-                } else {
-                    if (isLocationEnabled(MapsActivity.this)) {
-                        Toast.makeText(MapsActivity.this, "Must have location services on", Toast.LENGTH_LONG).show();
-                    } else {
-                        Log.d("t", "user does not have location on");
-                    }
-                }
-            }
-        };
-        mLocationManager = (LocationManager) getSystemService(LOCATION_SERVICE);
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-            if (ContextCompat.checkSelfPermission(this, android.Manifest.permission.ACCESS_FINE_LOCATION)
-                    != PackageManager.PERMISSION_GRANTED) {
-                Log.d("t", "they do not have location services on");
-                ActivityCompat.requestPermissions(this, new String[]{
-                        android.Manifest.permission.ACCESS_FINE_LOCATION, android.Manifest.permission.ACCESS_COARSE_LOCATION,
-                        android.Manifest.permission.INTERNET
-                }, 10);
-            }
+        if (runtime_permissions(this)) {
+            enable_locations();
         } else {
-            if (isLocationEnabled(MapsActivity.this)) {
-                mLocationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER, 5000, 0, mLocationListener);
-            } else {
-                Log.d("t", "need to check if they have location on");
-            }
-
+            Log.e("t", "location services are not on....what do we do :(");
         }
+    }
+
+    private boolean runtime_permissions(Context context) {
+        int locationMode = 0;
+        String locationProviders;
+
+        if (Build.VERSION.SDK_INT >= 23 &&
+                ContextCompat.checkSelfPermission(this, android.Manifest.permission.ACCESS_FINE_LOCATION)
+                        !=  PackageManager.PERMISSION_GRANTED &&
+                ContextCompat.checkSelfPermission(this, android.Manifest.permission.ACCESS_COARSE_LOCATION)
+                        !=  PackageManager.PERMISSION_GRANTED) {
+            requestPermissions(new String[]{android.Manifest.permission.ACCESS_FINE_LOCATION, android.Manifest.permission.ACCESS_COARSE_LOCATION}, 100);
+            return true;
+        } else if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT){
+            try {
+                locationMode = Settings.Secure.getInt(context.getContentResolver(), Settings.Secure.LOCATION_MODE);
+            } catch (Settings.SettingNotFoundException e) {
+                e.printStackTrace();
+            }
+            return locationMode != Settings.Secure.LOCATION_MODE_OFF;
+        }
+        return false;
+    }
+
+    private void enable_locations() {
+        startService(new Intent(this, GPS_Service.class));
+        Log.d("t", "GPS_Service has been started");
     }
 
     @Override
@@ -273,11 +276,13 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
     @Override
     public void onMapReady(GoogleMap googleMap) {
         mMap = googleMap;
-
+        if (runtime_permissions(this)) {
+            mMap.setMyLocationEnabled(true);
+        }
         // Add a marker in Sydney and move the camera
-        LatLng waterloo = new LatLng(43.4807540, -80.5242860);
-        mMap.addMarker(new MarkerOptions().position(waterloo).title("Marker in Waterloo"));
-        mMap.moveCamera(CameraUpdateFactory.newLatLng(waterloo));
+//        LatLng waterloo = new LatLng(43.4807540, -80.5242860);
+//        mMap.addMarker(new MarkerOptions().position(waterloo).title("Marker in Waterloo"));
+//        mMap.moveCamera(CameraUpdateFactory.newLatLng(waterloo));
     }
 
 //    @Override
@@ -296,29 +301,15 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
 
     @Override
     public void onRequestPermissionsResult(int requestCode, String[] permissions, int[] grantResults) {
-        switch (requestCode) {
-            case 10:
-                if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
-                    // All good!
-                } else {
-                    Toast.makeText(this, "Need your location!", Toast.LENGTH_LONG).show();
-                }
-
-                break;
-            default:
-                break;
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults);
+        if (requestCode == 100) {
+            if (grantResults.length > 1 && grantResults[0] == PackageManager.PERMISSION_GRANTED
+                    && grantResults[1] == PackageManager.PERMISSION_GRANTED) {
+                enable_locations();
+            } else {
+                runtime_permissions(MapsActivity.this);
+            }
         }
     }
-
-//    @Override
-//    public void onConnected(Bundle bundle) {
-//        if (ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION)
-//                == PackageManager.PERMISSION_GRANTED) {
-//
-//
-////            Location lastLocation = LocationServices.FusedLocationApi.requestLocationUpdates(googleApiClient, );
-//
-//        }
-//    }
 
 }
