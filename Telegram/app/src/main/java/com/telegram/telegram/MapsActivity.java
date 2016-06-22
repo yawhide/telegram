@@ -58,15 +58,6 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
     OkHttpClient client = new OkHttpClient();
 
     void post(String url, RequestBody formBody) throws IOException {
-
-        formBody = new FormBody.Builder()
-                .add("uid", "NERD")
-                .add("msg", "i r nerd")
-                .add("img", "nada")
-                .add("lat", "43.432540")
-                .add ("lng", "-80.522320")
-                .build();
-
         Request request = new Request.Builder()
                 .url(url)
                 .post(formBody)
@@ -238,7 +229,7 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
 
             RequestBody formBody = new FormBody.Builder()
                     .add("uid", "Stefanovic")
-                    .add("msg", "i r nerd")
+                    .add("msg", telegramMessage)
                     .add("img", "nada")
                     .add("lat", "43.4807540")
                     .add("lng", "-80.5242860")
