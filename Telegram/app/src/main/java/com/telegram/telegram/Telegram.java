@@ -7,14 +7,17 @@ public class Telegram {
     private String img;
     private Double lat;
     private Double lng;
+    private Boolean unlocked = true;
 
-    // This is the constructor of the class Employee
+
     public Telegram(Double uid, String msg, String img, Double lat, Double lng) {
         this.uid = uid;
         this.msg = msg;
         this.img = img;
         this.lat = lat;
         this.lng = lng;
+        this.unlocked = false;
+
     }
 
 
