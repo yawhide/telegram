@@ -1,6 +1,7 @@
 from flask import Flask, request
 from pymongo import MongoClient, GEO2D
 from bson.json_util import dumps
+import json
 
 app = Flask(__name__)
 app.debug = True
@@ -27,12 +28,20 @@ def getAll():
 # 200m radius might be too small. Unlockable : 1 mile, Observable : 2 miles
 @app.route('/telegrams/within', methods=['GET'])
 def getTelegramsWithin ():
-  lat = request.form.get('lat')
-  lng = request.form.get ('lng')
-  rad = request.form.get('rad')
+  lat = request.args.get('lat')
+  lng = request.args.get ('lng')
+  rad = request.args.get('rad')
   query = {"loc": {"$geoWithin": {"$centerSphere": [[float(lng), float(lat)], float(rad)/3963.2 ]}}}
   cursor = db.telegrams.find(query).sort('_id')
-  return dumps(cursor) 
+  
+  query_locked = {"loc": {"$geoWithin": {"$centerSphere": [[float(lng), float(lat)], (float(rad)+1)/3963.2 ]}}}
+  cursor_locked = db.telegrams.find(query_locked).sort('_id')
+
+  data = {}
+  data['1'] = cursor
+  data['2'] = cursor_locked
+
+  return dumps(data)
 
 
 @app.route('/drop', methods=['POST'])
