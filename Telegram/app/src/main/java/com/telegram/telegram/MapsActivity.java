@@ -1,15 +1,13 @@
 package com.telegram.telegram;
 
+import android.*;
+import android.Manifest;
 import android.app.AlertDialog;
-import android.content.BroadcastReceiver;
-import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
-import android.content.IntentFilter;
 import android.content.IntentSender;
 import android.content.pm.PackageManager;
 import android.location.Location;
-import android.location.LocationManager;
 import android.os.Build;
 import android.os.Bundle;
 import android.provider.Settings;
@@ -18,8 +16,6 @@ import android.support.annotation.Nullable;
 import android.support.design.widget.FloatingActionButton;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.app.FragmentActivity;
-import android.support.v4.content.ContextCompat;
-import android.text.TextUtils;
 import android.util.Log;
 import android.view.View;
 import android.widget.Toast;
@@ -29,8 +25,10 @@ import com.google.android.gms.common.api.GoogleApiClient;
 import com.google.android.gms.common.api.PendingResult;
 import com.google.android.gms.common.api.ResultCallback;
 import com.google.android.gms.common.api.Status;
+import com.google.android.gms.location.LocationCallback;
 import com.google.android.gms.location.LocationListener;
 import com.google.android.gms.location.LocationRequest;
+import com.google.android.gms.location.LocationResult;
 import com.google.android.gms.location.LocationServices;
 import com.google.android.gms.location.LocationSettingsRequest;
 import com.google.android.gms.location.LocationSettingsResult;
@@ -42,7 +40,6 @@ import com.google.android.gms.maps.OnMapReadyCallback;
 import com.google.android.gms.maps.SupportMapFragment;
 import com.google.android.gms.maps.model.BitmapDescriptorFactory;
 import com.google.android.gms.maps.model.LatLng;
-import com.google.android.gms.maps.model.Marker;
 import com.google.android.gms.maps.model.MarkerOptions;
 
 import java.io.IOException;
@@ -53,7 +50,6 @@ import java.util.ArrayList;
 import okhttp3.Call;
 import okhttp3.Callback;
 import okhttp3.FormBody;
-import okhttp3.HttpUrl;
 import okhttp3.MediaType;
 import okhttp3.OkHttpClient;
 import okhttp3.Request;
@@ -75,9 +71,9 @@ public class MapsActivity extends FragmentActivity
     private GoogleApiClient mGoogleApiClient;
 
     private Location mCurrentLocation;
-    private final int REQUEST_CHECK_SETTINGS = 15;
-    private final int REQUEST_GET_LAST_LOCATION = 20;
-    private final int REQUEST_INITIAL_CHECK_SETTINGS = 25;
+    private final int CHECK_SETTINGS_START_LOCATION_UPDATES = 15;
+    private final int CHECK_SETTINGS_GET_LAST_LOCATION = 20;
+    private final int CHECK_SETTINGS_INITIALIZE_LOCATION = 25;
     private LocationRequest mLocationRequest;
     private String mLastUpdateTime;
     protected final static String REQUESTING_LOCATION_UPDATES_KEY = "requesting-location-updates-key";
@@ -203,26 +199,27 @@ public class MapsActivity extends FragmentActivity
                 e.printStackTrace();
             }
             */
-        } else if (requestCode == REQUEST_CHECK_SETTINGS) {
+        } else if (requestCode == CHECK_SETTINGS_START_LOCATION_UPDATES) {
             // check if user put location setting on from createLocationRequest
             if (resultCode == RESULT_OK) {
                 startLocationUpdates();
             } else {
-                checkLocationSettings(REQUEST_CHECK_SETTINGS);
+                checkLocationSettings(CHECK_SETTINGS_START_LOCATION_UPDATES);
             }
-        } else if (requestCode == REQUEST_GET_LAST_LOCATION) {
+        } else if (requestCode == CHECK_SETTINGS_GET_LAST_LOCATION) {
             if (resultCode == RESULT_OK) {
                 getLastLocation();
             } else {
-                checkLocationSettings(REQUEST_GET_LAST_LOCATION);
+                checkLocationSettings(CHECK_SETTINGS_GET_LAST_LOCATION);
             }
-        } else if (requestCode == REQUEST_INITIAL_CHECK_SETTINGS) {
+        } else if (requestCode == CHECK_SETTINGS_INITIALIZE_LOCATION) {
             if (resultCode == RESULT_OK) {
                 mMap.setMyLocationEnabled(true);
+                getLastLocation();
                 startLocationUpdates();
                 fab.setEnabled(true);
             } else {
-                checkLocationSettings(REQUEST_INITIAL_CHECK_SETTINGS);
+                checkLocationSettings(CHECK_SETTINGS_INITIALIZE_LOCATION);
             }
         }
     }
@@ -287,20 +284,18 @@ public class MapsActivity extends FragmentActivity
                                     addTelegramToMap(lockedJsonArray.getJSONObject(i));
                                 }
 
-                            }
-                            catch (JSONException e) {
+                            } catch (JSONException e) {
                                 e.printStackTrace();
                             }
 
                         }
 
                     });
-                }
-                catch (JSONException e) {
+                } catch (JSONException e) {
                     e.printStackTrace();
                 }
             }
-        } );
+        });
     }
 
 
@@ -309,7 +304,7 @@ public class MapsActivity extends FragmentActivity
      * @param telegram
      * @throws JSONException
      */
-    private void addTelegramToMap(JSONObject telegram) throws JSONException{
+    private void addTelegramToMap(JSONObject telegram) throws JSONException {
         // Would have to parse and construct each JSONObject as a Telegram
         // Possible new method here to build Telegram from JSON - buildTelegram
         // Then add it to the map/local storage
@@ -330,18 +325,36 @@ public class MapsActivity extends FragmentActivity
         );
     }
 
-//    @Override
-//    public void onRequestPermissionsResult(int requestCode, String[] permissions, int[] grantResults) {
-//        super.onRequestPermissionsResult(requestCode, permissions, grantResults);
-//        if (requestCode == 100) {
-//            if (grantResults.length > 1 && grantResults[0] == PackageManager.PERMISSION_GRANTED
-//                    && grantResults[1] == PackageManager.PERMISSION_GRANTED) {
-//                enable_locations();
-//            } else {
-//                locationIsOn(MapsActivity.this);
-//            }
-//        }
-//    }
+    @Override
+    public void onRequestPermissionsResult(int requestCode, String[] permissions, int[] grantResults) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults);
+
+        if (requestCode == CHECK_SETTINGS_GET_LAST_LOCATION) {
+            if (grantResults.length > 1 && grantResults[0] == PackageManager.PERMISSION_GRANTED
+                    && grantResults[1] == PackageManager.PERMISSION_GRANTED) {
+                getLastLocation();
+            } else {
+                checkLocationSettings(requestCode);
+            }
+        } else if (requestCode == CHECK_SETTINGS_INITIALIZE_LOCATION) {
+            if (grantResults.length > 1 && grantResults[0] == PackageManager.PERMISSION_GRANTED
+                    && grantResults[1] == PackageManager.PERMISSION_GRANTED) {
+                mMap.setMyLocationEnabled(true);
+                getLastLocation();
+                startLocationUpdates();
+                fab.setEnabled(true);
+            } else {
+                checkLocationSettings(requestCode);
+            }
+        } else if (requestCode == CHECK_SETTINGS_START_LOCATION_UPDATES) {
+            if (grantResults.length > 1 && grantResults[0] == PackageManager.PERMISSION_GRANTED
+                    && grantResults[1] == PackageManager.PERMISSION_GRANTED) {
+                startLocationUpdates();
+            } else {
+                checkLocationSettings(requestCode);
+            }
+        }
+    }
 
     // ================================ Location stuff ============================ //
     private void updateValuesFromBundle(Bundle savedInstanceState) {
@@ -370,9 +383,10 @@ public class MapsActivity extends FragmentActivity
                 .addOnConnectionFailedListener(this)
                 .addApi(LocationServices.API)
                 .build();
+        mGoogleApiClient.connect();
         createLocationRequest();
         createLocationListener();
-        checkLocationSettings(REQUEST_INITIAL_CHECK_SETTINGS);
+//        checkLocationSettings(CHECK_SETTINGS_INITIALIZE_LOCATION);
     }
 
     protected void createLocationListener() {
@@ -400,12 +414,20 @@ public class MapsActivity extends FragmentActivity
                 final LocationSettingsStates locationSettingState = result.getLocationSettingsStates();
                 switch (status.getStatusCode()) {
                     case LocationSettingsStatusCodes.SUCCESS:
-                        if (activityResultCode == REQUEST_CHECK_SETTINGS) {
+                        if (activityResultCode == 0) {
+                            break;
+                        } else if (activityResultCode == CHECK_SETTINGS_START_LOCATION_UPDATES) {
                             startLocationUpdates();
-                        } else if (activityResultCode == REQUEST_GET_LAST_LOCATION) {
+                        } else if (activityResultCode == CHECK_SETTINGS_GET_LAST_LOCATION) {
                             getLastLocation();
-                        } else if (activityResultCode == REQUEST_INITIAL_CHECK_SETTINGS) {
+                        } else if (activityResultCode == CHECK_SETTINGS_INITIALIZE_LOCATION) {
+                            if (Build.VERSION.SDK_INT >= 23
+                                    && ActivityCompat.checkSelfPermission(MapsActivity.this, android.Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED
+                                    && ActivityCompat.checkSelfPermission(MapsActivity.this, android.Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
+                                ActivityCompat.requestPermissions(MapsActivity.this, new String[] { Manifest.permission.ACCESS_FINE_LOCATION, Manifest.permission.ACCESS_COARSE_LOCATION}, activityResultCode);
+                            }
                             mMap.setMyLocationEnabled(true);
+                            getLastLocation();
                             startLocationUpdates();
                             fab.setEnabled(true);
                         }
@@ -426,27 +448,7 @@ public class MapsActivity extends FragmentActivity
                     case LocationSettingsStatusCodes.SETTINGS_CHANGE_UNAVAILABLE:
                         // Location settings are not satisfied. However, we have no way
                         // to fix the settings so we won't show the dialog.
-                        AlertDialog.Builder alertDialog = new AlertDialog.Builder(MapsActivity.this);
-                        alertDialog.setTitle("GPS Settings");
-                        alertDialog.setMessage("GPS is not enabled. Do you want to go to settings menu ?");
-
-                        alertDialog.setPositiveButton("Settings",
-                                new DialogInterface.OnClickListener() {
-                                    public void onClick(DialogInterface dialog, int which) {
-                                        Intent intent = new Intent(
-                                                Settings.ACTION_LOCATION_SOURCE_SETTINGS);
-                                        MapsActivity.this.startActivity(intent);
-                                    }
-                                });
-
-                        alertDialog.setNegativeButton("Cancel",
-                                new DialogInterface.OnClickListener() {
-                                    public void onClick(DialogInterface dialog, int which) {
-                                        dialog.cancel();
-                                    }
-                                });
-
-                        alertDialog.show();
+                        showLocationAlert(activityResultCode);
                         break;
                 }
             }
@@ -454,10 +456,12 @@ public class MapsActivity extends FragmentActivity
     }
 
     protected void createLocationRequest() {
-        mLocationRequest = new LocationRequest();
-        mLocationRequest.setInterval(UPDATE_INTERVAL_IN_MILLISECONDS);
-        mLocationRequest.setFastestInterval(FASTEST_UPDATE_INTERVAL_IN_MILLISECONDS);
-        mLocationRequest.setPriority(LocationRequest.PRIORITY_HIGH_ACCURACY);
+        if (mLocationRequest == null) {
+            mLocationRequest = new LocationRequest();
+            mLocationRequest.setInterval(UPDATE_INTERVAL_IN_MILLISECONDS);
+            mLocationRequest.setFastestInterval(FASTEST_UPDATE_INTERVAL_IN_MILLISECONDS);
+            mLocationRequest.setPriority(LocationRequest.PRIORITY_HIGH_ACCURACY);
+        }
     }
 
     protected void startLocationUpdates() {
@@ -468,6 +472,13 @@ public class MapsActivity extends FragmentActivity
     protected void stopLocationUpdates() {
         LocationServices.FusedLocationApi.removeLocationUpdates(
                 mGoogleApiClient, mLocationListener);
+//        PendingResult<Status> result = LocationServices.FusedLocationApi.removeLocationUpdates(mGoogleApiClient, new LocationCallback() {
+//            @Override
+//            public void onLocationResult(LocationResult locationResult) {
+//                super.onLocationResult(locationResult);
+//
+//            }
+//        });
     }
 
     protected void getLastLocation() {
@@ -489,9 +500,35 @@ public class MapsActivity extends FragmentActivity
         Toast.makeText(MapsActivity.this, text, Toast.LENGTH_LONG).show();
     }
 
+    private void showLocationAlert(final int activityResultCode) {
+        AlertDialog.Builder alertDialog = new AlertDialog.Builder(this);
+        alertDialog.setTitle("GPS Settings");
+        alertDialog.setMessage("GPS is not enabled. Do you want to go to settings menu ?");
+
+        alertDialog.setPositiveButton("Settings",
+                new DialogInterface.OnClickListener() {
+                    public void onClick(DialogInterface dialog, int which) {
+                        Intent intent = new Intent(
+                                Settings.ACTION_LOCATION_SOURCE_SETTINGS);
+                        MapsActivity.this.startActivity(intent);
+                    }
+                });
+
+        alertDialog.setNegativeButton("Cancel",
+                new DialogInterface.OnClickListener() {
+                    public void onClick(DialogInterface dialog, int which) {
+                        dialog.cancel();
+                        checkLocationSettings(activityResultCode);
+                    }
+                });
+
+        alertDialog.show();
+    }
+
     @Override
     protected void onStart() {
         super.onStart();
+        Log.d(TAG, "telegram started");
         if (mGoogleApiClient != null) {
             mGoogleApiClient.connect();
         }
@@ -500,14 +537,16 @@ public class MapsActivity extends FragmentActivity
     @Override
     protected void onResume() {
         super.onResume();
+        Log.d(TAG, "telegram resumed");
         if (mGoogleApiClient.isConnected()) {
-            checkLocationSettings(REQUEST_CHECK_SETTINGS);
+            checkLocationSettings(CHECK_SETTINGS_START_LOCATION_UPDATES);
         }
     }
 
     @Override
     protected void onPause() {
         super.onPause();
+        Log.d(TAG, "telegram paused");
         if (mGoogleApiClient.isConnected()) {
             stopLocationUpdates();
         }
@@ -515,24 +554,27 @@ public class MapsActivity extends FragmentActivity
 
     @Override
     protected void onStop() {
+        Log.d(TAG, "telegram stoped");
         mGoogleApiClient.disconnect();
         super.onStop();
     }
 
     @Override
     public void onConnected(@Nullable Bundle bundle) {
-        checkLocationSettings(REQUEST_GET_LAST_LOCATION);
+        Log.d(TAG, "google api client connected");
+        checkLocationSettings(CHECK_SETTINGS_INITIALIZE_LOCATION);
+//        checkLocationSettings(CHECK_SETTINGS_GET_LAST_LOCATION);
     }
 
     @Override
     public void onConnectionSuspended(int i) {
-        Log.i(TAG, "Connection suspended");
+        Log.i(TAG, "google api client suspended");
         mGoogleApiClient.connect();
     }
 
     @Override
     public void onConnectionFailed(@NonNull ConnectionResult connectionResult) {
-        Log.i(TAG, "Connection failed: ConnectionResult.getErrorCode() = " + connectionResult.getErrorCode());
+        Log.i(TAG, "google api client failed: ConnectionResult.getErrorCode() = " + connectionResult.getErrorCode());
     }
 
     public void onSaveInstanceState(Bundle savedInstanceState) {
