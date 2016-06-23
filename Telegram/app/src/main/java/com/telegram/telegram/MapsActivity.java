@@ -294,10 +294,6 @@ public class MapsActivity extends FragmentActivity
                                 JSONArray unlockedJsonArray = jsonResp.getJSONArray("1");
                                 JSONArray lockedJsonArray = jsonResp.getJSONArray("2");
 
-                                // Create these arrays for later if we need them
-                                ArrayList<Telegram> unlocked = new ArrayList<Telegram>();
-                                ArrayList<Telegram> locked = new ArrayList<Telegram>();
-
                                 for (int i = 0; i < unlockedJsonArray.length(); i++) {
                                     JSONObject telegramObj = unlockedJsonArray.getJSONObject(i);
                                     Telegram telegram = new Telegram(
