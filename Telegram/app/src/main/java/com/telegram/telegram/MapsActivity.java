@@ -48,7 +48,7 @@ import com.google.android.gms.maps.model.MarkerOptions;
 import java.io.IOException;
 import java.text.DateFormat;
 import java.util.Date;
-
+import java.util.ArrayList;
 
 import okhttp3.Call;
 import okhttp3.Callback;
@@ -59,6 +59,10 @@ import okhttp3.OkHttpClient;
 import okhttp3.Request;
 import okhttp3.RequestBody;
 import okhttp3.Response;
+
+import org.json.JSONObject;
+import org.json.JSONArray;
+import org.json.JSONException;
 
 public class MapsActivity extends FragmentActivity
         implements OnMapReadyCallback, GoogleApiClient.ConnectionCallbacks, GoogleApiClient.OnConnectionFailedListener {
@@ -85,6 +89,8 @@ public class MapsActivity extends FragmentActivity
     private LocationListener mLocationListener;
 
     private FloatingActionButton fab;
+
+    private ArrayList<Telegram> telegrams;
 
     public static final MediaType JSON = MediaType.parse("application/json; charset=utf-8");
 
@@ -121,35 +127,20 @@ public class MapsActivity extends FragmentActivity
         });
     }
 
-    void get(String url) throws IOException {
+    /**
+     * Performs get request given a URL and calls the callback.
+     * @param url String
+     * @param cb Callback
+     */
+    void get(String url, final Callback cb) {
+
         Request request = new Request.Builder()
                 //.header("Authorization", "token abcd")
                 .url(url)
                 .build();
-        // Get a handler that can be used to post to the main thread
-        client.newCall(request).enqueue(new Callback() {
-            @Override
-            public void onFailure(Call call, IOException e) {
-                e.printStackTrace();
-            }
 
-            @Override
-            public void onResponse(Call call, final Response response) throws IOException {
-                if (!response.isSuccessful()) {
-                    throw new IOException("Unexpected code " + response);
-                }
-                // Read data on the worker thread
-                final String responseData = response.body().string();
+        client.newCall(request).enqueue(cb);
 
-                // Run view-related code back on the main thread
-                MapsActivity.this.runOnUiThread(new Runnable() {
-                    @Override
-                    public void run() {
-                        Log.d("t", responseData);
-                    }
-                });
-            }
-        });
     }
 
     @Override
@@ -228,6 +219,7 @@ public class MapsActivity extends FragmentActivity
         } else if (requestCode == REQUEST_INITIAL_CHECK_SETTINGS) {
             if (resultCode == RESULT_OK) {
                 mMap.setMyLocationEnabled(true);
+                startLocationUpdates();
                 fab.setEnabled(true);
             } else {
                 checkLocationSettings(REQUEST_INITIAL_CHECK_SETTINGS);
@@ -243,6 +235,87 @@ public class MapsActivity extends FragmentActivity
 //        mMap.addMarker(new MarkerOptions().position(waterloo).title("Marker in Waterloo"));
 //        mMap.moveCamera(CameraUpdateFactory.newLatLng(waterloo));
     }
+
+
+    /**
+     * Gets all Telegrams in radius using lastLat and lastLng
+     * TODO: Figure out why so many try-catches are needed.
+     * @throws JSONException
+     */
+    private void getTelegrams() throws JSONException {
+
+        int rad = 1;
+        String URL = SERVER_URI + "telegrams/within?&" +
+                "lat=" + String.valueOf(mCurrentLocation.getLatitude()) +
+                "&lng=" + String.valueOf(mCurrentLocation.getLongitude()) +
+                "&rad=" + rad;
+
+        get(URL, new Callback() {
+            @Override
+            public void onFailure(Call call, IOException e) {
+                e.printStackTrace();
+            }
+
+            @Override
+            public void onResponse(Call call, final Response response) throws IOException {
+
+                if (!response.isSuccessful()) {
+                    throw new IOException("Unexpected code " + response);
+                }
+                // Read data on the worker thread
+                String responseData = response.body().string();
+
+                try {
+                    // Convert String to json object
+                    final JSONObject jsonResp = new JSONObject(responseData);
+
+                    MapsActivity.this.runOnUiThread(new Runnable() {
+
+                        @Override
+                        public void run() {
+                            // iterate over two arrays
+                            // put marker on the map for 1 telegram
+                            try {
+                                JSONArray unlockedJsonArray = jsonResp.getJSONArray("1");
+                                JSONArray lockedJsonArray = jsonResp.getJSONArray("2");
+
+                                for (int i = 0; i < unlockedJsonArray.length(); i++) {
+                                    addTelegramToMap(unlockedJsonArray.getJSONObject(i));
+                                }
+
+                                for (int i = 0; i < lockedJsonArray.length(); i++) {
+                                    addTelegramToMap(lockedJsonArray.getJSONObject(i));
+                                }
+
+                            }
+                            catch (JSONException e) {
+                                e.printStackTrace();
+                            }
+
+                        }
+
+                    });
+                }
+                catch (JSONException e) {
+                    e.printStackTrace();
+                }
+            }
+        } );
+    }
+
+
+    /**
+     * Adds a Telegram to the map and colours it according to unlockable or locked.
+     * @param telegram
+     * @throws JSONException
+     */
+    private void addTelegramToMap(JSONObject telegram) throws JSONException{
+        // Would have to parse and construct each JSONObject as a Telegram
+        // Possible new method here to build Telegram from JSON - buildTelegram
+        // Then add it to the map/local storage
+        Log.d("t", "ADD TO MAP: " + telegram.get("msg"));
+    }
+
 
 //    @Override
 //    public void OnMarkerClickListener(Marker marker) {
@@ -333,6 +406,7 @@ public class MapsActivity extends FragmentActivity
                             getLastLocation();
                         } else if (activityResultCode == REQUEST_INITIAL_CHECK_SETTINGS) {
                             mMap.setMyLocationEnabled(true);
+                            startLocationUpdates();
                             fab.setEnabled(true);
                         }
                         break;
@@ -387,8 +461,6 @@ public class MapsActivity extends FragmentActivity
     }
 
     protected void startLocationUpdates() {
-        // The final argument to {@code requestLocationUpdates()} is a LocationListener
-        // (http://developer.android.com/reference/com/google/android/gms/location/LocationListener.html).
         LocationServices.FusedLocationApi.requestLocationUpdates(
                 mGoogleApiClient, mLocationRequest, mLocationListener);
     }
@@ -402,13 +474,14 @@ public class MapsActivity extends FragmentActivity
         if (mCurrentLocation == null) {
             mCurrentLocation = LocationServices.FusedLocationApi.getLastLocation(mGoogleApiClient);
             mLastUpdateTime = DateFormat.getTimeInstance().format(new Date());
-            if (mCurrentLocation != null) {
-                updateUI();
-            }
+            updateUI();
         }
     }
 
     private void updateUI() {
+        if (mCurrentLocation == null){
+            return;
+        }
         String text = String.format("Lat: %f, Lng: %f, Update time: %s",
                 mCurrentLocation.getLatitude(),
                 mCurrentLocation.getLongitude(),
