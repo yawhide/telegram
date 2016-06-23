@@ -306,8 +306,8 @@ public class MapsActivity extends FragmentActivity
                                             telegramObj.getString("img"),
                                             telegramObj.getJSONObject("loc").getJSONArray("coordinates").getDouble(1),
                                             telegramObj.getJSONObject("loc").getJSONArray("coordinates").getDouble(0));
-                                    unlocked.add(telegram);
-                                    addTelegramToMap(telegram);
+                                    unlockedTelegrams.add(telegram);
+                                    //addTelegramToMap(telegram);
                                 }
 
                                 for (int i = 0; i < lockedJsonArray.length(); i++) {
@@ -318,8 +318,8 @@ public class MapsActivity extends FragmentActivity
                                             telegramObj.getString("img"),
                                             telegramObj.getJSONObject("loc").getJSONArray("coordinates").getDouble(1),
                                             telegramObj.getJSONObject("loc").getJSONArray("coordinates").getDouble(0));
-                                    locked.add(telegram);
-                                    addTelegramToMap(telegram);
+                                    lockedTelegrams.add(telegram);
+                                    //addTelegramToMap(telegram);
                                 }
 
                             } catch (JSONException e) {
