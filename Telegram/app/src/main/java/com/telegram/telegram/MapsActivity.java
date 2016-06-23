@@ -279,12 +279,32 @@ public class MapsActivity extends FragmentActivity
                                 JSONArray unlockedJsonArray = jsonResp.getJSONArray("1");
                                 JSONArray lockedJsonArray = jsonResp.getJSONArray("2");
 
+                                // Create these arrays for later if we need them
+                                ArrayList<Telegram> unlocked = new ArrayList<Telegram>();
+                                ArrayList<Telegram> locked = new ArrayList<Telegram>();
+
                                 for (int i = 0; i < unlockedJsonArray.length(); i++) {
-                                    addTelegramToMap(unlockedJsonArray.getJSONObject(i));
+                                    JSONObject telegramObj = unlockedJsonArray.getJSONObject(i);
+                                    Telegram telegram = new Telegram(
+                                            telegramObj.getDouble("uid"),
+                                            telegramObj.getString("msg"),
+                                            telegramObj.getString("img"),
+                                            telegramObj.getJSONObject("loc").getJSONArray("coordinates").getDouble(1),
+                                            telegramObj.getJSONObject("loc").getJSONArray("coordinates").getDouble(0));
+                                    unlocked.add(telegram);
+                                    addTelegramToMap(telegram);
                                 }
 
                                 for (int i = 0; i < lockedJsonArray.length(); i++) {
-                                    addTelegramToMap(lockedJsonArray.getJSONObject(i));
+                                    JSONObject telegramObj = unlockedJsonArray.getJSONObject(i);
+                                    Telegram telegram = new Telegram(
+                                            telegramObj.getDouble("uid"),
+                                            telegramObj.getString("msg"),
+                                            telegramObj.getString("img"),
+                                            telegramObj.getJSONObject("loc").getJSONArray("coordinates").getDouble(1),
+                                            telegramObj.getJSONObject("loc").getJSONArray("coordinates").getDouble(0));
+                                    locked.add(telegram);
+                                    addTelegramToMap(telegram);
                                 }
 
                             }
@@ -304,24 +324,15 @@ public class MapsActivity extends FragmentActivity
     }
 
 
-    /**
-     * Adds a Telegram to the map and colours it according to unlockable or locked.
-     * @param telegram
-     * @throws JSONException
-     */
-    private void addTelegramToMap(JSONObject telegram) throws JSONException{
-        // Would have to parse and construct each JSONObject as a Telegram
-        // Possible new method here to build Telegram from JSON - buildTelegram
-        // Then add it to the map/local storage
-        Log.d("t", "ADD TO MAP: " + telegram.get("msg"));
-    }
-
-
 //    @Override
 //    public void OnMarkerClickListener(Marker marker) {
 //
 //    }
 
+    /**
+     * Adds a Telegram to the map and colours it according to unlockable or locked.
+     * @param telegram
+     */
     private void addTelegramToMap(Telegram telegram) {
         mMap.addMarker(new MarkerOptions()
                         .position(new LatLng(telegram.getLat(), telegram.getLng()))
