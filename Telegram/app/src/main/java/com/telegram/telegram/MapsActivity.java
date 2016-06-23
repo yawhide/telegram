@@ -93,16 +93,18 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
         });
     }
 
-    void get(String url, final Callback cb) throws JSONException {
-
-        JSONObject jsonResp;
+    /**
+     * Performs get request given a URL and calls the callback.
+     * @param url String
+     * @param cb Callback
+     */
+    void get(String url, final Callback cb) {
 
         Request request = new Request.Builder()
                 //.header("Authorization", "token abcd")
                 .url(url)
                 .build();
 
-        // Get a handler that can be used to post to the main thread
         client.newCall(request).enqueue(cb);
 
     }
@@ -257,70 +259,76 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
 
     }
 
+
+    /**
+     * Gets all Telegrams in radius using lastLat and lastLng
+     * TODO: Figure out why so many try-catches are needed.
+     * @throws JSONException
+     */
     private void getTelegrams() throws JSONException {
 
         int rad = 1;
-        String URL = SERVER_URI + "telegrams/within?&" + "lat=" + String.valueOf(lastLat) + "&lng=" + String.valueOf(lastLon) + "&rad=" + rad;
+        String URL = SERVER_URI + "telegrams/within?&" + "lat=" + String.valueOf(lastLat) + "&lng=" + String.valueOf(lastLng) + "&rad=" + rad;
 
-        try {
-            get(URL, new Callback() {
-                @Override
-                public void onFailure(Call call, IOException e) {
-                    e.printStackTrace();
+        get(URL, new Callback() {
+            @Override
+            public void onFailure(Call call, IOException e) {
+                e.printStackTrace();
+            }
+
+            @Override
+            public void onResponse(Call call, final Response response) throws IOException {
+
+                if (!response.isSuccessful()) {
+                    throw new IOException("Unexpected code " + response);
                 }
+                // Read data on the worker thread
+                String responseData = response.body().string();
 
-                @Override
-                public void onResponse(Call call, final Response response) throws IOException {
+                try {
+                    // Convert String to json object
+                    final JSONObject jsonResp = new JSONObject(responseData);
 
-                    if (!response.isSuccessful()) {
-                        throw new IOException("Unexpected code " + response);
-                    }
-                    // Read data on the worker thread
-                    String responseData = response.body().string();
+                    MapsActivity.this.runOnUiThread(new Runnable() {
 
-                    try {
-                        // Convert String to json object
-                        final JSONObject jsonResp = new JSONObject(responseData);
+                        @Override
+                        public void run() {
+                            // iterate over two arrays
+                            // put marker on the map for 1 telegram
+                            try {
+                                JSONArray unlockedJsonArray = jsonResp.getJSONArray("1");
+                                JSONArray lockedJsonArray = jsonResp.getJSONArray("2");
 
-                        MapsActivity.this.runOnUiThread(new Runnable() {
-
-                            @Override
-                            public void run() {
-                                // iterate over two arrays
-                                // put marker on the map for 1 telegram
-                                try {
-                                    JSONArray unlockedJsonArray = jsonResp.getJSONArray("1");
-                                    JSONArray lockedJsonArray = jsonResp.getJSONArray("2");
-
-                                    for (int i = 0; i < unlockedJsonArray.length(); i++) {
-                                        addTelegramToMap(unlockedJsonArray.getJSONObject(i));
-                                    }
-
-                                    for (int i = 0; i < lockedJsonArray.length(); i++) {
-                                        addTelegramToMap(lockedJsonArray.getJSONObject(i));
-                                    }
-
+                                for (int i = 0; i < unlockedJsonArray.length(); i++) {
+                                    addTelegramToMap(unlockedJsonArray.getJSONObject(i));
                                 }
-                                catch (JSONException e) {
-                                    e.printStackTrace();
+
+                                for (int i = 0; i < lockedJsonArray.length(); i++) {
+                                    addTelegramToMap(lockedJsonArray.getJSONObject(i));
                                 }
 
                             }
+                            catch (JSONException e) {
+                                e.printStackTrace();
+                            }
 
-                        });
-                    }
-                    catch (JSONException e) {
-                        e.printStackTrace();
-                    }
+                        }
+
+                    });
                 }
-            } );
-        }
-        catch (JSONException e) {
-            e.printStackTrace();
-        }
-
+                catch (JSONException e) {
+                    e.printStackTrace();
+                }
+            }
+        } );
     }
 
+
+    /**
+     * Adds a Telegram to the map and colours it according to unlockable or locked.
+     * @param telegram
+     * @throws JSONException
+     */
     private void addTelegramToMap(JSONObject telegram) throws JSONException{
         // Would have to parse and construct each JSONObject as a Telegram
         // Possible new method here to build Telegram from JSON - buildTelegram
