@@ -30,7 +30,7 @@ import com.google.android.gms.maps.model.Marker;
 import com.google.android.gms.maps.model.MarkerOptions;
 
 import java.io.IOException;
-
+import java.util.ArrayList;
 
 
 import okhttp3.Call;
@@ -43,6 +43,10 @@ import okhttp3.Request;
 import okhttp3.RequestBody;
 import okhttp3.Response;
 
+import org.json.JSONObject;
+import org.json.JSONArray;
+import org.json.JSONException;
+
 public class MapsActivity extends FragmentActivity implements OnMapReadyCallback {
 
     private GoogleMap mMap;
@@ -52,6 +56,7 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
     private BroadcastReceiver broadcastReceiver;
 
     private double lastLat, lastLng;
+    private ArrayList<Telegram> telegrams;
 
     public static final MediaType JSON = MediaType.parse("application/json; charset=utf-8");
 
@@ -88,35 +93,18 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
         });
     }
 
-    void get(String url) throws IOException {
+    void get(String url, final Callback cb) throws JSONException {
+
+        JSONObject jsonResp;
+
         Request request = new Request.Builder()
                 //.header("Authorization", "token abcd")
                 .url(url)
                 .build();
+
         // Get a handler that can be used to post to the main thread
-        client.newCall(request).enqueue(new Callback() {
-            @Override
-            public void onFailure(Call call, IOException e) {
-                e.printStackTrace();
-            }
+        client.newCall(request).enqueue(cb);
 
-            @Override
-            public void onResponse(Call call, final Response response) throws IOException {
-                if (!response.isSuccessful()) {
-                    throw new IOException("Unexpected code " + response);
-                }
-                // Read data on the worker thread
-                final String responseData = response.body().string();
-
-                // Run view-related code back on the main thread
-                MapsActivity.this.runOnUiThread(new Runnable() {
-                    @Override
-                    public void run() {
-                        Log.d("t", responseData);
-                    }
-                });
-            }
-        });
     }
 
     @Override
@@ -251,11 +239,96 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
         if (runtime_permissions(this)) {
             mMap.setMyLocationEnabled(true);
         }
-        // Add a marker in Sydney and move the camera
-//        LatLng waterloo = new LatLng(43.4807540, -80.5242860);
-//        mMap.addMarker(new MarkerOptions().position(waterloo).title("Marker in Waterloo"));
-//        mMap.moveCamera(CameraUpdateFactory.newLatLng(waterloo));
+        LatLng waterloo = new LatLng(43.4807540, -80.5242860);
+
+        mMap.addMarker(new MarkerOptions()
+                .position(waterloo)
+                .title("Marker in Waterloo")
+        );
+
+        mMap.moveCamera(CameraUpdateFactory.newLatLng(waterloo));
+
+        try {
+            getTelegrams();
+        }
+        catch (JSONException e) {
+            e.printStackTrace();
+        }
+
     }
+
+    private void getTelegrams() throws JSONException {
+
+        int rad = 1;
+        String URL = SERVER_URI + "telegrams/within?&" + "lat=" + String.valueOf(lastLat) + "&lng=" + String.valueOf(lastLon) + "&rad=" + rad;
+
+        try {
+            get(URL, new Callback() {
+                @Override
+                public void onFailure(Call call, IOException e) {
+                    e.printStackTrace();
+                }
+
+                @Override
+                public void onResponse(Call call, final Response response) throws IOException {
+
+                    if (!response.isSuccessful()) {
+                        throw new IOException("Unexpected code " + response);
+                    }
+                    // Read data on the worker thread
+                    String responseData = response.body().string();
+
+                    try {
+                        // Convert String to json object
+                        final JSONObject jsonResp = new JSONObject(responseData);
+
+                        MapsActivity.this.runOnUiThread(new Runnable() {
+
+                            @Override
+                            public void run() {
+                                // iterate over two arrays
+                                // put marker on the map for 1 telegram
+                                try {
+                                    JSONArray unlockedJsonArray = jsonResp.getJSONArray("1");
+                                    JSONArray lockedJsonArray = jsonResp.getJSONArray("2");
+
+                                    for (int i = 0; i < unlockedJsonArray.length(); i++) {
+                                        addTelegramToMap(unlockedJsonArray.getJSONObject(i));
+                                    }
+
+                                    for (int i = 0; i < lockedJsonArray.length(); i++) {
+                                        addTelegramToMap(lockedJsonArray.getJSONObject(i));
+                                    }
+
+                                }
+                                catch (JSONException e) {
+                                    e.printStackTrace();
+                                }
+
+                            }
+
+                        });
+                    }
+                    catch (JSONException e) {
+                        e.printStackTrace();
+                    }
+                }
+            } );
+        }
+        catch (JSONException e) {
+            e.printStackTrace();
+        }
+
+    }
+
+    private void addTelegramToMap(JSONObject telegram) throws JSONException{
+        // Would have to parse and construct each JSONObject as a Telegram
+        // Possible new method here to build Telegram from JSON - buildTelegram
+        // Then add it to the map/local storage
+        Log.d("t", "ADD TO MAP: " + telegram.get("msg"));
+    }
+
+
 
 //    @Override
 //    public void OnMarkerClickListener(Marker marker) {
