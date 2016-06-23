@@ -20,6 +20,11 @@ public class TelegramMessage extends Activity {
 
         setContentView(R.layout.activity_message);
 
+        Intent intent = getIntent();
+
+        Double lat = intent.getDoubleExtra("lat", 0);
+        Double lng = intent.getDoubleExtra("lng", 0);
+
         DisplayMetrics dm = new DisplayMetrics();
         getWindowManager().getDefaultDisplay().getMetrics(dm);
 

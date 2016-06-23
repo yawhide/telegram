@@ -9,7 +9,6 @@ public class Telegram {
     private Double lng;
     private Boolean unlocked = true;
 
-
     public Telegram(Double uid, String msg, String img, Double lat, Double lng) {
         this.uid = uid;
         this.msg = msg;
@@ -20,5 +19,11 @@ public class Telegram {
 
     }
 
+    public double getLat() {
+        return lat;
+    }
 
+    public double getLng() {
+        return lng;
+    }
 }
