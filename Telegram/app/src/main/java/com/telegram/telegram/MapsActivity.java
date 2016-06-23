@@ -6,6 +6,7 @@ import android.app.AlertDialog;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.IntentSender;
+import android.content.pm.ActivityInfo;
 import android.content.pm.PackageManager;
 import android.location.Location;
 import android.os.Build;
@@ -79,48 +80,27 @@ public class MapsActivity extends FragmentActivity
     protected final static String REQUESTING_LOCATION_UPDATES_KEY = "requesting-location-updates-key";
     protected final static String LOCATION_KEY = "location-key";
     protected final static String LAST_UPDATED_TIME_STRING_KEY = "last-updated-time-string-key";
-    public static final long UPDATE_INTERVAL_IN_MILLISECONDS = 10000;
+    public static final long UPDATE_INTERVAL_IN_MILLISECONDS = 15000;
     public static final long FASTEST_UPDATE_INTERVAL_IN_MILLISECONDS =
             UPDATE_INTERVAL_IN_MILLISECONDS / 2;
     private LocationListener mLocationListener;
 
     private FloatingActionButton fab;
 
-    private ArrayList<Telegram> telegrams;
+    private ArrayList<Telegram> unlockedTelegrams = new ArrayList<>();
+    private ArrayList<Telegram> lockedTelegrams = new ArrayList<>();
 
     public static final MediaType JSON = MediaType.parse("application/json; charset=utf-8");
 
     OkHttpClient client = new OkHttpClient();
 
-    void post(String url, RequestBody formBody) throws IOException {
+    void post(String url, RequestBody formBody, Callback cb) throws IOException {
         Request request = new Request.Builder()
                 .url(url)
                 .post(formBody)
                 .build();
 
-        client.newCall(request).enqueue(new Callback() {
-            @Override
-            public void onFailure(Call call, IOException e) {
-                e.printStackTrace();
-            }
-
-            @Override
-            public void onResponse(Call call, final Response response) throws IOException {
-                if (!response.isSuccessful()) {
-                    throw new IOException("Unexpected code " + response);
-                }
-                // Read data on the worker thread
-                final String responseData = response.body().string();
-
-                // Run view-related code back on the main thread
-                MapsActivity.this.runOnUiThread(new Runnable() {
-                    @Override
-                    public void run() {
-                        Log.d("t", responseData);
-                    }
-                });
-            }
-        });
+        client.newCall(request).enqueue(cb);
     }
 
     /**
@@ -163,6 +143,7 @@ public class MapsActivity extends FragmentActivity
             }
         });
         fab.setEnabled(false);
+        setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_LOCKED);
     }
 
     @Override
@@ -172,21 +153,52 @@ public class MapsActivity extends FragmentActivity
         if (requestCode == 123 && resultCode == RESULT_OK) {
             Log.d("t", "got data from message activity, now post it");
             // Extract the inputted text from the user
-            String telegramMessage = data.getStringExtra("message");
+            final String telegramMessage = data.getStringExtra("message");
 
             // Do some error checking on the message, ie. make sure its not bullshit or blank
             Log.d("t", "THIS IS FROM MESSAGE DIALOG: " + telegramMessage);
+            final double lat = mCurrentLocation.getLatitude();
+            final double lng = mCurrentLocation.getLongitude();
+
+            final String strLat = String.valueOf(mCurrentLocation.getLatitude());
+            final String strLng = String.valueOf(mCurrentLocation.getLongitude());
 
             RequestBody formBody = new FormBody.Builder()
                     .add("uid", "Shayanovic")
                     .add("msg", telegramMessage)
                     .add("img", "nada")
-                    .add("lat", String.valueOf(mCurrentLocation.getLatitude()))
-                    .add("lng", String.valueOf(mCurrentLocation.getLongitude()))
+                    .add("lat", strLat)
+                    .add("lng", strLng)
                     .build();
 
             try {
-                post(SERVER_URI + "drop", formBody);
+                post(SERVER_URI + "drop", formBody, new Callback() {
+                    @Override
+                    public void onFailure(Call call, IOException e) {
+                        e.printStackTrace();
+                    }
+
+                    @Override
+                    public void onResponse(Call call, final Response response) throws IOException {
+                        if (!response.isSuccessful()) {
+                            throw new IOException("Unexpected code " + response);
+                        }
+                        // Read data on the worker thread
+                        final String responseData = response.body().string();
+
+                        // Run view-related code back on the main thread
+                        MapsActivity.this.runOnUiThread(new Runnable() {
+                            @Override
+                            public void run() {
+                                Log.d("t", responseData);
+                                Telegram t = new Telegram(1234567890.0, telegramMessage, "naaaada",
+                                        lat, lng);
+                                unlockedTelegrams.add(t);
+                                addTelegramToMap(t);
+                            }
+                        });
+                    }
+                });
 //                addTelegramToMap();
             } catch (IOException e) {
                 e.printStackTrace();
@@ -231,6 +243,12 @@ public class MapsActivity extends FragmentActivity
 //        LatLng waterloo = new LatLng(43.4807540, -80.5242860);
 //        mMap.addMarker(new MarkerOptions().position(waterloo).title("Marker in Waterloo"));
 //        mMap.moveCamera(CameraUpdateFactory.newLatLng(waterloo));
+        for (Telegram t: unlockedTelegrams) {
+            addTelegramToMap(t);
+        }
+        for (Telegram t: lockedTelegrams) {
+            addTelegramToMap(t);
+        }
     }
 
 
@@ -318,18 +336,6 @@ public class MapsActivity extends FragmentActivity
         });
     }
 
-
-    /**
-     * Adds a Telegram to the map and colours it according to unlockable or locked.
-     * @param telegram
-     * @throws JSONException
-     */
-    private void addTelegramToMap(JSONObject telegram) throws JSONException {
-        // Would have to parse and construct each JSONObject as a Telegram
-        // Possible new method here to build Telegram from JSON - buildTelegram
-        // Then add it to the map/local storage
-        Log.d("t", "ADD TO MAP: " + telegram.get("msg"));
-    }
 
 //    @Override
 //    public void OnMarkerClickListener(Marker marker) {

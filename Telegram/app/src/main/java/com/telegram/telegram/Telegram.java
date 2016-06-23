@@ -1,5 +1,8 @@
 package com.telegram.telegram;
 
+import org.json.JSONException;
+import org.json.JSONObject;
+
 public class Telegram {
 
     private Double uid;
