@@ -1,6 +1,6 @@
 from flask import Flask, request
 from pymongo import MongoClient, GEO2D
-from bson.json_util import dumps
+from bson.json_util import dumps,loads
 import json
 
 app = Flask(__name__)
@@ -37,9 +37,15 @@ def getTelegramsWithin ():
   query_locked = {"loc": {"$geoWithin": {"$centerSphere": [[float(lng), float(lat)], (float(rad)+1)/3963.2 ]}}}
   cursor_locked = db.telegrams.find(query_locked).sort('_id')
 
+  in_range_json = loads(dumps(cursor))
+  locked_json = loads(dumps(cursor_locked))
+
+  in_range = set([q['_id'] for q in in_range_json])
+  out_of_range = [l for l in locked_json if  l['_id'] not in in_range]
+
   data = {}
-  data['1'] = cursor
-  data['2'] = cursor_locked
+  data['1'] = in_range_json
+  data['2'] = out_of_range
 
   return dumps(data)
 
