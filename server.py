@@ -2,6 +2,7 @@ from flask import Flask, request
 from pymongo import MongoClient, GEO2D
 from bson.json_util import dumps,loads
 import json
+import pymongo
 
 app = Flask(__name__)
 app.debug = True
@@ -9,32 +10,57 @@ master_db = 'test_telgram2'
 client = MongoClient()
 db = client[master_db]
 db.telegrams.create_index([("loc", '2dsphere')])
+db.users.create_index([("uid,", pymongo.ASCENDING)])
+db.expiry.create_index([("expiry", pymongo.ASCENDING)])
 
 class Telegram (object):
   def __init__ (self, uid, msg, img, lat, lng):
     self.uid = uid
     self.msg = msg
     self.img = img
-    print lat, lng
     self.loc = {"type":"Point", "coordinates": [float(lng),float(lat)]}
 
-@app.route('/telegrams/all', methods=['GET'])
-def getAll():
-  coll = db['telegrams']
-  cursor = coll.find()
+@app.route('/users/all', methods = ['GET'])
+def get_users():
+  cursor = db.users.find()
   return dumps(cursor)
 
-# The radius has to be in miles -- currently defaulted to 1 mile 
-# 200m radius might be too small. Unlockable : 1 mile, Observable : 2 miles
+@app.route('/telegrams/all', methods=['GET'])
+def get_all():
+  coll = db['telegrams']
+  cursor = coll.find()
+  return dumps(cursor)  
+
+@app.route('/telegrams/seen', methods=['POST'])
+def mark_telegram_seen():
+  uid = request.args.get('uid')
+  tid = request.args.get('tid')
+  exp = request.args.get('exp')
+  db.users.insert_one({'uid': uid, 'tid': tid})
+  db.expiry.insert_one({'tid': tid, 'expiry': exp})
+  return dumps(0)
+
+
+def get_uid_telegrams(uid):
+  cursor = db.users.find({"uid": uid})
+  telegrams = loads(dumps(cursor))
+  return set([q['_id'] for q in in_range_json])
+
+
+# The radius is in miles | Unlockable : 1 mile, Observable : 2 miles
 @app.route('/telegrams/within', methods=['GET'])
-def getTelegramsWithin ():
+def telegrams_within ():
   lat = request.args.get('lat')
   lng = request.args.get ('lng')
   rad = request.args.get('rad')
+  uid = request.args.get('uid')
+
+  uid_telegrams = get_uid_telegrams (uid)
+
   query = {"loc": {"$geoWithin": {"$centerSphere": [[float(lng), float(lat)], float(rad)/3963.2 ]}}}
   cursor = db.telegrams.find(query).sort('_id')
   
-  query_locked = {"loc": {"$geoWithin": {"$centerSphere": [[float(lng), float(lat)], (float(rad)+1)/3963.2 ]}}}
+  query_locked = {"loc": {"$geoWithin": {"$centerSphere": [[float(lng), float(lat)], (float(rad)+2)/3963.2 ]}}}
   cursor_locked = db.telegrams.find(query_locked).sort('_id')
 
   in_range_json = loads(dumps(cursor))
