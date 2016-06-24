@@ -39,14 +39,20 @@ import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.OnMapReadyCallback;
 import com.google.android.gms.maps.SupportMapFragment;
+import com.google.android.gms.maps.model.BitmapDescriptor;
 import com.google.android.gms.maps.model.BitmapDescriptorFactory;
 import com.google.android.gms.maps.model.LatLng;
+import com.google.android.gms.maps.model.Marker;
 import com.google.android.gms.maps.model.MarkerOptions;
 
 import java.io.IOException;
 import java.text.DateFormat;
+import java.util.Collection;
 import java.util.Date;
 import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.Set;
 
 import okhttp3.Call;
 import okhttp3.Callback;
@@ -75,20 +81,22 @@ public class MapsActivity extends FragmentActivity
     private final int CHECK_SETTINGS_START_LOCATION_UPDATES = 15;
     private final int CHECK_SETTINGS_GET_LAST_LOCATION = 20;
     private final int CHECK_SETTINGS_INITIALIZE_LOCATION = 25;
+    private final int CHECK_LOCATION_ON_CREATE = 30;
     private LocationRequest mLocationRequest;
     private String mLastUpdateTime;
     protected final static String REQUESTING_LOCATION_UPDATES_KEY = "requesting-location-updates-key";
     protected final static String LOCATION_KEY = "location-key";
     protected final static String LAST_UPDATED_TIME_STRING_KEY = "last-updated-time-string-key";
-    public static final long UPDATE_INTERVAL_IN_MILLISECONDS = 15000;
+    public static final long UPDATE_INTERVAL_IN_MILLISECONDS = 60000;
     public static final long FASTEST_UPDATE_INTERVAL_IN_MILLISECONDS =
             UPDATE_INTERVAL_IN_MILLISECONDS / 2;
     private LocationListener mLocationListener;
+    private float GOOGLE_MAP_DEFAULT_ZOOM = 16.0f;
 
     private FloatingActionButton fab;
 
-    private ArrayList<Telegram> unlockedTelegrams = new ArrayList<>();
-    private ArrayList<Telegram> lockedTelegrams = new ArrayList<>();
+    private HashMap<String, Telegram> unlockedTelegrams = new HashMap<>();
+    private HashMap<String, Telegram> lockedTelegrams = new HashMap<>();
 
     public static final MediaType JSON = MediaType.parse("application/json; charset=utf-8");
 
@@ -116,7 +124,6 @@ public class MapsActivity extends FragmentActivity
                 .build();
 
         client.newCall(request).enqueue(cb);
-
     }
 
     @Override
@@ -131,6 +138,14 @@ public class MapsActivity extends FragmentActivity
         mLastUpdateTime = "";
         updateValuesFromBundle(savedInstanceState);
         buildGoogleApiClient();
+
+        if (Build.VERSION.SDK_INT >= 23
+                && ActivityCompat.checkSelfPermission(MapsActivity.this, android.Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED
+                && ActivityCompat.checkSelfPermission(MapsActivity.this, android.Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
+            ActivityCompat.requestPermissions(MapsActivity.this, new String[] { Manifest.permission.ACCESS_FINE_LOCATION, Manifest.permission.ACCESS_COARSE_LOCATION}, CHECK_LOCATION_ON_CREATE);
+        }
+        createLocationRequest();
+        createLocationListener();
 
         fab = (FloatingActionButton) findViewById(R.id.fab);
         fab.setOnClickListener(new View.OnClickListener() {
@@ -151,12 +166,12 @@ public class MapsActivity extends FragmentActivity
 
         // Request code has to match the activity code it was called with
         if (requestCode == 123 && resultCode == RESULT_OK) {
-            Log.d("t", "got data from message activity, now post it");
+            Log.d(TAG, "got data from message activity, now post it");
             // Extract the inputted text from the user
             final String telegramMessage = data.getStringExtra("message");
 
             // Do some error checking on the message, ie. make sure its not bullshit or blank
-            Log.d("t", "THIS IS FROM MESSAGE DIALOG: " + telegramMessage);
+            Log.d(TAG, "THIS IS FROM MESSAGE DIALOG: " + telegramMessage);
             final double lat = mCurrentLocation.getLatitude();
             final double lng = mCurrentLocation.getLongitude();
 
@@ -190,27 +205,18 @@ public class MapsActivity extends FragmentActivity
                         MapsActivity.this.runOnUiThread(new Runnable() {
                             @Override
                             public void run() {
-                                Log.d("t", responseData);
-                                Telegram t = new Telegram(1234567890.0, telegramMessage, "naaaada",
-                                        lat, lng);
-                                unlockedTelegrams.add(t);
-                                addTelegramToMap(t);
+                                Log.d(TAG, responseData);
+                                Telegram t = new Telegram("Stefanovic", telegramMessage, "naaaada",
+                                        lat, lng, false);
+                                String id = addTelegramToMap(t);
+                                unlockedTelegrams.put(id, t);
                             }
                         });
                     }
                 });
-//                addTelegramToMap();
             } catch (IOException e) {
                 e.printStackTrace();
             }
-            /*  Do some shit here that actually posts the data
-
-            try {
-                get("http://107.22.150.246:5000");
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
-            */
         } else if (requestCode == CHECK_SETTINGS_START_LOCATION_UPDATES) {
             // check if user put location setting on from createLocationRequest
             if (resultCode == RESULT_OK) {
@@ -239,28 +245,21 @@ public class MapsActivity extends FragmentActivity
     @Override
     public void onMapReady(GoogleMap googleMap) {
         mMap = googleMap;
+        mMap.animateCamera(CameraUpdateFactory.zoomTo(GOOGLE_MAP_DEFAULT_ZOOM));
         // Add a marker in Sydney and move the camera
 //        LatLng waterloo = new LatLng(43.4807540, -80.5242860);
 //        mMap.addMarker(new MarkerOptions().position(waterloo).title("Marker in Waterloo"));
 //        mMap.moveCamera(CameraUpdateFactory.newLatLng(waterloo));
-        for (Telegram t: unlockedTelegrams) {
-            addTelegramToMap(t);
-        }
-        for (Telegram t: lockedTelegrams) {
-            addTelegramToMap(t);
-        }
     }
-
 
     /**
      * Gets all Telegrams in radius using lastLat and lastLng
      * TODO: Figure out why so many try-catches are needed.
-     * @throws JSONException
      */
-    private void getTelegrams() throws JSONException {
+    private void pollForNewTelegrams() {
 
         int rad = 1;
-        String URL = SERVER_URI + "telegrams/within?&" +
+        String URL = SERVER_URI + "telegrams/within?" +
                 "lat=" + String.valueOf(mCurrentLocation.getLatitude()) +
                 "&lng=" + String.valueOf(mCurrentLocation.getLongitude()) +
                 "&rad=" + rad;
@@ -272,70 +271,83 @@ public class MapsActivity extends FragmentActivity
             }
 
             @Override
-            public void onResponse(Call call, final Response response) throws IOException {
-
-                if (!response.isSuccessful()) {
-                    throw new IOException("Unexpected code " + response);
-                }
-                // Read data on the worker thread
-                String responseData = response.body().string();
-
+            public void onResponse(Call call, final Response response) {
                 try {
-                    // Convert String to json object
-                    final JSONObject jsonResp = new JSONObject(responseData);
+                    if (!response.isSuccessful()) {
+                        throw new IOException("Unexpected code " + response);
+                    }
+                    // Read data on the worker thread
+                    String responseData = response.body().string();
 
-                    MapsActivity.this.runOnUiThread(new Runnable() {
+                    try {
+                        // Convert String to json object
+                        final JSONObject jsonResp = new JSONObject(responseData);
 
-                        @Override
-                        public void run() {
-                            // iterate over two arrays
-                            // put marker on the map for 1 telegram
-                            try {
-                                JSONArray unlockedJsonArray = jsonResp.getJSONArray("1");
-                                JSONArray lockedJsonArray = jsonResp.getJSONArray("2");
+                        MapsActivity.this.runOnUiThread(new Runnable() {
 
-                                // Create these arrays for later if we need them
-                                ArrayList<Telegram> unlocked = new ArrayList<Telegram>();
-                                ArrayList<Telegram> locked = new ArrayList<Telegram>();
+                            @Override
+                            public void run() {
+                                // iterate over two arrays
+                                // put marker on the map for 1 telegram
+                                try {
+                                    JSONArray unlockedJsonArray = jsonResp.getJSONArray("1");
+                                    JSONArray lockedJsonArray = jsonResp.getJSONArray("2");
 
-                                for (int i = 0; i < unlockedJsonArray.length(); i++) {
-                                    JSONObject telegramObj = unlockedJsonArray.getJSONObject(i);
-                                    Telegram telegram = new Telegram(
-                                            telegramObj.getDouble("uid"),
-                                            telegramObj.getString("msg"),
-                                            telegramObj.getString("img"),
-                                            telegramObj.getJSONObject("loc").getJSONArray("coordinates").getDouble(1),
-                                            telegramObj.getJSONObject("loc").getJSONArray("coordinates").getDouble(0));
-                                    unlocked.add(telegram);
-                                    addTelegramToMap(telegram);
+                                    // Create these arrays for later if we need them
+                                    ArrayList<Telegram> unlocked = new ArrayList<Telegram>();
+                                    ArrayList<Telegram> locked = new ArrayList<Telegram>();
+
+                                    for (int i = 0; i < unlockedJsonArray.length(); i++) {
+                                        JSONObject telegramObj = unlockedJsonArray.getJSONObject(i);
+                                        Telegram telegram = new Telegram(
+                                                telegramObj.getString("uid"),
+                                                telegramObj.getString("msg"),
+                                                telegramObj.getString("img"),
+                                                telegramObj.getJSONObject("loc").getJSONArray("coordinates").getDouble(1),
+                                                telegramObj.getJSONObject("loc").getJSONArray("coordinates").getDouble(0),
+                                                false);
+                                        unlocked.add(telegram);
+                                    }
+
+                                    for (int i = 0; i < lockedJsonArray.length(); i++) {
+                                        JSONObject telegramObj = lockedJsonArray.getJSONObject(i);
+                                        Telegram telegram = new Telegram(
+                                                telegramObj.getString("uid"),
+                                                telegramObj.getString("msg"),
+                                                telegramObj.getString("img"),
+                                                telegramObj.getJSONObject("loc").getJSONArray("coordinates").getDouble(1),
+                                                telegramObj.getJSONObject("loc").getJSONArray("coordinates").getDouble(0),
+                                                true);
+                                        locked.add(telegram);
+                                    }
+                                    unlockedTelegrams.clear();
+                                    lockedTelegrams.clear();
+                                    mMap.clear();
+                                    for (Telegram t : locked) {
+                                        String id = addTelegramToMap(t);
+                                        lockedTelegrams.put(id, t);
+                                    }
+                                    for (Telegram t : unlocked) {
+                                        String id = addTelegramToMap(t);
+                                        unlockedTelegrams.put(id, t);
+                                    }
+
+                                } catch (JSONException e) {
+                                    e.printStackTrace();
                                 }
 
-                                for (int i = 0; i < lockedJsonArray.length(); i++) {
-                                    JSONObject telegramObj = unlockedJsonArray.getJSONObject(i);
-                                    Telegram telegram = new Telegram(
-                                            telegramObj.getDouble("uid"),
-                                            telegramObj.getString("msg"),
-                                            telegramObj.getString("img"),
-                                            telegramObj.getJSONObject("loc").getJSONArray("coordinates").getDouble(1),
-                                            telegramObj.getJSONObject("loc").getJSONArray("coordinates").getDouble(0));
-                                    locked.add(telegram);
-                                    addTelegramToMap(telegram);
-                                }
-
-                            } catch (JSONException e) {
-                                e.printStackTrace();
                             }
 
-                        }
-
-                    });
-                } catch (JSONException e) {
-                    e.printStackTrace();
+                        });
+                    } catch (JSONException e) {
+                        e.printStackTrace();
+                    }
+                } catch (IOException e) {
+                     e.printStackTrace();
                 }
             }
         });
     }
-
 
 //    @Override
 //    public void OnMarkerClickListener(Marker marker) {
@@ -346,12 +358,14 @@ public class MapsActivity extends FragmentActivity
      * Adds a Telegram to the map and colours it according to unlockable or locked.
      * @param telegram
      */
-    private void addTelegramToMap(Telegram telegram) {
-        mMap.addMarker(new MarkerOptions()
+    private String addTelegramToMap(Telegram telegram) {
+        float colour = telegram.isLocked() ? BitmapDescriptorFactory.HUE_RED : BitmapDescriptorFactory.HUE_GREEN;
+        Log.d(TAG, colour + " is locked:" + telegram.isLocked());
+        Marker marker = mMap.addMarker(new MarkerOptions()
                         .position(new LatLng(telegram.getLat(), telegram.getLng()))
-                        .icon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_GREEN))
+                        .icon(BitmapDescriptorFactory.defaultMarker(colour)));
 //                .icon(BitmapDescriptorFactory.fromResource(R.drawable.arrow))
-        );
+        return marker.getId();
     }
 
     @Override
@@ -379,6 +393,13 @@ public class MapsActivity extends FragmentActivity
             if (grantResults.length > 1 && grantResults[0] == PackageManager.PERMISSION_GRANTED
                     && grantResults[1] == PackageManager.PERMISSION_GRANTED) {
                 startLocationUpdates();
+            } else {
+                checkLocationSettings(requestCode);
+            }
+        } else if (requestCode == CHECK_LOCATION_ON_CREATE) {
+            if (grantResults.length > 1 && grantResults[0] == PackageManager.PERMISSION_GRANTED
+                    && grantResults[1] == PackageManager.PERMISSION_GRANTED) {
+                // TODO: 6/23/2016
             } else {
                 checkLocationSettings(requestCode);
             }
@@ -413,9 +434,6 @@ public class MapsActivity extends FragmentActivity
                 .addApi(LocationServices.API)
                 .build();
         mGoogleApiClient.connect();
-        createLocationRequest();
-        createLocationListener();
-//        checkLocationSettings(CHECK_SETTINGS_INITIALIZE_LOCATION);
     }
 
     protected void createLocationListener() {
@@ -426,7 +444,7 @@ public class MapsActivity extends FragmentActivity
                 mLastUpdateTime = DateFormat.getTimeInstance().format(new Date());
                 updateUI();
                 mMap.moveCamera(CameraUpdateFactory.newLatLng(new LatLng(mCurrentLocation.getLatitude(), mCurrentLocation.getLongitude())));
-                mMap.animateCamera(CameraUpdateFactory.zoomTo(17.0f));
+                pollForNewTelegrams();
             }
         };
     }
@@ -459,6 +477,8 @@ public class MapsActivity extends FragmentActivity
                             getLastLocation();
                             startLocationUpdates();
                             fab.setEnabled(true);
+                        } else if (activityResultCode == CHECK_LOCATION_ON_CREATE) {
+                            // TODO: 6/23/2016  
                         }
                         break;
                     case LocationSettingsStatusCodes.RESOLUTION_REQUIRED:
@@ -501,13 +521,6 @@ public class MapsActivity extends FragmentActivity
     protected void stopLocationUpdates() {
         LocationServices.FusedLocationApi.removeLocationUpdates(
                 mGoogleApiClient, mLocationListener);
-//        PendingResult<Status> result = LocationServices.FusedLocationApi.removeLocationUpdates(mGoogleApiClient, new LocationCallback() {
-//            @Override
-//            public void onLocationResult(LocationResult locationResult) {
-//                super.onLocationResult(locationResult);
-//
-//            }
-//        });
     }
 
     protected void getLastLocation() {
