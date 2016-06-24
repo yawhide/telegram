@@ -74,6 +74,7 @@ public class MapsActivity extends FragmentActivity
     protected static final String TAG = "map-activity";
 
     private GoogleSignInAccount user;
+    private String testUserEmail;
 
     private GoogleMap mMap;
     public static final String SERVER_URI = "http://ubuntu@ec2-107-22-150-246.compute-1.amazonaws.com:5000/";
@@ -134,8 +135,13 @@ public class MapsActivity extends FragmentActivity
         super.onCreate(savedInstanceState);
 
         Intent intent = getIntent();
-        user = (GoogleSignInAccount) intent.getExtras().get("oath");
-        Log.d(TAG, user.getEmail() + " signed in");
+        if (intent.getExtras().get("oath") != null) {
+            user = (GoogleSignInAccount) intent.getExtras().get("oath");
+            Log.d(TAG, user.getEmail() + " signed in");
+        } else {
+            testUserEmail = "avie@gmail.com";
+            Log.d(TAG, "failed to sign in...using " + testUserEmail);
+        }
 
         setContentView(R.layout.activity_maps);
         // Obtain the SupportMapFragment and get notified when the map is ready to be used.
@@ -162,7 +168,7 @@ public class MapsActivity extends FragmentActivity
                 Intent i = new Intent(MapsActivity.this, CreateTelegram.class);
                 i.putExtra("lat", mCurrentLocation.getLatitude());
                 i.putExtra("lng", mCurrentLocation.getLongitude());
-                i.putExtra("uid", user.getEmail());
+                i.putExtra("uid", user != null ? user.getEmail() : testUserEmail);
                 startActivityForResult(i, 123);
             }
         });
@@ -245,10 +251,6 @@ public class MapsActivity extends FragmentActivity
 //        mMap.moveCamera(CameraUpdateFactory.newLatLng(waterloo));
     }
 
-    /**
-     * Gets all Telegrams in radius using lastLat and lastLng
-     * TODO: Figure out why so many try-catches are needed.
-     */
     private void pollForNewTelegrams() {
 
         int rad = 1;
@@ -256,7 +258,7 @@ public class MapsActivity extends FragmentActivity
                 "lat=" + String.valueOf(mCurrentLocation.getLatitude()) +
                 "&lng=" + String.valueOf(mCurrentLocation.getLongitude()) +
                 "&rad=" + rad +
-                "&uid=" + user.getEmail();
+                "&uid=" + (user != null ? user.getEmail() : testUserEmail);
 
         get(URL, new Callback() {
             @Override
@@ -293,7 +295,7 @@ public class MapsActivity extends FragmentActivity
 
                                     for (int i = 0; i < unlockedJsonArray.length(); i++) {
                                         JSONObject telegramObj = unlockedJsonArray.getJSONObject(i);
-                                        if (telegramObj.getString("uid") == user.getEmail()) continue;
+                                        if (telegramObj.getString("uid") == (user != null ? user.getEmail() : testUserEmail)) continue;
                                         Telegram telegram = new Telegram(
                                                 telegramObj.getString("uid"),
                                                 telegramObj.getString("msg"),
@@ -306,7 +308,7 @@ public class MapsActivity extends FragmentActivity
 
                                     for (int i = 0; i < lockedJsonArray.length(); i++) {
                                         JSONObject telegramObj = lockedJsonArray.getJSONObject(i);
-                                        if (telegramObj.getString("uid") == user.getEmail()) continue;
+                                        if (telegramObj.getString("uid") == (user != null ? user.getEmail() : testUserEmail)) continue;
                                         Telegram telegram = new Telegram(
                                                 telegramObj.getString("uid"),
                                                 telegramObj.getString("msg"),
