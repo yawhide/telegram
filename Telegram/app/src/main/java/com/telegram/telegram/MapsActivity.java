@@ -136,7 +136,7 @@ public class MapsActivity extends FragmentActivity
         fab.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                Intent i = new Intent(MapsActivity.this, TelegramMessage.class);
+                Intent i = new Intent(MapsActivity.this, CreateTelegram.class);
                 i.putExtra("lat", mCurrentLocation.getLatitude());
                 i.putExtra("lng", mCurrentLocation.getLongitude());
                 startActivityForResult(i, 123);

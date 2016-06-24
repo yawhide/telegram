@@ -8,17 +8,19 @@ import android.widget.Button;
 import android.widget.EditText;
 import android.view.View;
 import android.util.Log;
+import android.widget.ImageButton;
 
-public class TelegramMessage extends Activity {
+public class CreateTelegram extends Activity {
     private EditText editText;
     private Button cancelButton;
     private Button postButton;
+    private ImageButton uploadImageButton;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
-        setContentView(R.layout.activity_message);
+        setContentView(R.layout.activity_create);
 
         Intent intent = getIntent();
 
@@ -40,6 +42,7 @@ public class TelegramMessage extends Activity {
         // Get the buttons and listen for them to be clicked
         cancelButton = (Button) findViewById(R.id.CancelButton);
         postButton = (Button) findViewById(R.id.PostButton);
+        uploadImageButton = (ImageButton) findViewById(R.id.UploadImageButton);
 
         cancelButton.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -70,6 +73,19 @@ public class TelegramMessage extends Activity {
             }
 
         });
+
+
+        uploadImageButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                Log.d("t", "clicked upload image");
+
+                // Send data to the maps activity
+                Intent i = new Intent();
+            }
+        });
+
+
 
     }
 }
