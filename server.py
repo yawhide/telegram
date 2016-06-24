@@ -33,9 +33,9 @@ def get_all():
 
 @app.route('/telegrams/seen', methods=['POST'])
 def mark_telegram_seen():
-  uid = request.args.get('uid')
-  tid = request.args.get('tid')
-  exp = request.args.get('exp')
+  uid = request.form.get('uid')
+  tid = request.form.get('tid')
+  exp = request.form.get('exp')
   db.users.insert_one({'uid': uid, 'tid': tid})
   db.expiry.insert_one({'tid': tid, 'expiry': exp})
   return dumps(0)
