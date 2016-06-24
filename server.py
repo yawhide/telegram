@@ -44,7 +44,7 @@ def mark_telegram_seen():
 def get_uid_telegrams(uid):
   cursor = db.users.find({"uid": uid})
   telegrams = loads(dumps(cursor))
-  return set([q['_id'] for q in in_range_json])
+  return set([q['tid'] for q in telegrams])
 
 
 # The radius is in miles | Unlockable : 1 mile, Observable : 2 miles
@@ -66,6 +66,7 @@ def telegrams_within ():
   in_range_json = loads(dumps(cursor))
   locked_json = loads(dumps(cursor_locked))
 
+  in_range_json = [q for q in in_range_json if str(q['_id']) not in uid_telegrams]
   in_range = set([q['_id'] for q in in_range_json])
   out_of_range = [l for l in locked_json if  l['_id'] not in in_range]
 
