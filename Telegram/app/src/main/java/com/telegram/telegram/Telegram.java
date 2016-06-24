@@ -1,6 +1,11 @@
 package com.telegram.telegram;
 
-public class Telegram {
+import java.io.Serializable;
+
+import okhttp3.FormBody;
+import okhttp3.RequestBody;
+
+public class Telegram implements Serializable{
 
     private String uid;
     private String msg;
@@ -28,4 +33,14 @@ public class Telegram {
     }
 
     public boolean isLocked() { return locked; }
+
+    public RequestBody createFormBody() {
+        return new FormBody.Builder()
+                .add("uid", uid)
+                .add("msg", msg)
+                .add("img", img)
+                .add("lat", lat.toString())
+                .add("lng", lng.toString())
+                .build();
+    }
 }

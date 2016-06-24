@@ -21,6 +21,7 @@ import android.util.Log;
 import android.view.View;
 import android.widget.Toast;
 
+import com.google.android.gms.auth.api.signin.GoogleSignInAccount;
 import com.google.android.gms.common.ConnectionResult;
 import com.google.android.gms.common.api.GoogleApiClient;
 import com.google.android.gms.common.api.PendingResult;
@@ -71,6 +72,8 @@ public class MapsActivity extends FragmentActivity
         implements OnMapReadyCallback, GoogleApiClient.ConnectionCallbacks, GoogleApiClient.OnConnectionFailedListener {
 
     protected static final String TAG = "map-activity";
+
+    private GoogleSignInAccount user;
 
     private GoogleMap mMap;
     public static final String SERVER_URI = "http://ubuntu@ec2-107-22-150-246.compute-1.amazonaws.com:5000/";
@@ -129,6 +132,11 @@ public class MapsActivity extends FragmentActivity
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+
+        Intent intent = getIntent();
+        user = (GoogleSignInAccount) intent.getExtras().get("oath");
+        Log.d(TAG, user.getEmail() + " signed in");
+
         setContentView(R.layout.activity_maps);
         // Obtain the SupportMapFragment and get notified when the map is ready to be used.
         SupportMapFragment mapFragment = (SupportMapFragment) getSupportFragmentManager()
@@ -154,6 +162,7 @@ public class MapsActivity extends FragmentActivity
                 Intent i = new Intent(MapsActivity.this, CreateTelegram.class);
                 i.putExtra("lat", mCurrentLocation.getLatitude());
                 i.putExtra("lng", mCurrentLocation.getLongitude());
+                i.putExtra("uid", user.getEmail());
                 startActivityForResult(i, 123);
             }
         });
@@ -168,23 +177,9 @@ public class MapsActivity extends FragmentActivity
         if (requestCode == 123 && resultCode == RESULT_OK) {
             Log.d(TAG, "got data from message activity, now post it");
             // Extract the inputted text from the user
-            final String telegramMessage = data.getStringExtra("message");
+            final Telegram telegram = (Telegram) data.getExtras().get("telegram");
 
-            // Do some error checking on the message, ie. make sure its not bullshit or blank
-            Log.d(TAG, "THIS IS FROM MESSAGE DIALOG: " + telegramMessage);
-            final double lat = mCurrentLocation.getLatitude();
-            final double lng = mCurrentLocation.getLongitude();
-
-            final String strLat = String.valueOf(mCurrentLocation.getLatitude());
-            final String strLng = String.valueOf(mCurrentLocation.getLongitude());
-
-            RequestBody formBody = new FormBody.Builder()
-                    .add("uid", "Shayanovic")
-                    .add("msg", telegramMessage)
-                    .add("img", "nada")
-                    .add("lat", strLat)
-                    .add("lng", strLng)
-                    .build();
+            RequestBody formBody = telegram.createFormBody();
 
             try {
                 post(SERVER_URI + "drop", formBody, new Callback() {
@@ -206,10 +201,8 @@ public class MapsActivity extends FragmentActivity
                             @Override
                             public void run() {
                                 Log.d(TAG, responseData);
-                                Telegram t = new Telegram("Stefanovic", telegramMessage, "naaaada",
-                                        lat, lng, false);
-                                String id = addTelegramToMap(t);
-                                unlockedTelegrams.put(id, t);
+//                                String id = addTelegramToMap(telegram);
+//                                unlockedTelegrams.put(id, telegram);
                             }
                         });
                     }
@@ -262,7 +255,8 @@ public class MapsActivity extends FragmentActivity
         String URL = SERVER_URI + "telegrams/within?" +
                 "lat=" + String.valueOf(mCurrentLocation.getLatitude()) +
                 "&lng=" + String.valueOf(mCurrentLocation.getLongitude()) +
-                "&rad=" + rad;
+                "&rad=" + rad +
+                "&uid=" + user.getEmail();
 
         get(URL, new Callback() {
             @Override
@@ -299,6 +293,7 @@ public class MapsActivity extends FragmentActivity
 
                                     for (int i = 0; i < unlockedJsonArray.length(); i++) {
                                         JSONObject telegramObj = unlockedJsonArray.getJSONObject(i);
+                                        if (telegramObj.getString("uid") == user.getEmail()) continue;
                                         Telegram telegram = new Telegram(
                                                 telegramObj.getString("uid"),
                                                 telegramObj.getString("msg"),
@@ -311,6 +306,7 @@ public class MapsActivity extends FragmentActivity
 
                                     for (int i = 0; i < lockedJsonArray.length(); i++) {
                                         JSONObject telegramObj = lockedJsonArray.getJSONObject(i);
+                                        if (telegramObj.getString("uid") == user.getEmail()) continue;
                                         Telegram telegram = new Telegram(
                                                 telegramObj.getString("uid"),
                                                 telegramObj.getString("msg"),

@@ -24,8 +24,9 @@ public class CreateTelegram extends Activity {
 
         Intent intent = getIntent();
 
-        Double lat = intent.getDoubleExtra("lat", 0);
-        Double lng = intent.getDoubleExtra("lng", 0);
+        final Double lat = intent.getDoubleExtra("lat", 0);
+        final Double lng = intent.getDoubleExtra("lng", 0);
+        final String uid = intent.getStringExtra("uid");
 
         DisplayMetrics dm = new DisplayMetrics();
         getWindowManager().getDefaultDisplay().getMetrics(dm);
@@ -38,11 +39,14 @@ public class CreateTelegram extends Activity {
 
         // Get the editText view so we can get the data thats typed in
         editText = (EditText) findViewById(R.id.TelegramMessage);
+        final String message = editText.getText().toString();
 
         // Get the buttons and listen for them to be clicked
         cancelButton = (Button) findViewById(R.id.CancelButton);
         postButton = (Button) findViewById(R.id.PostButton);
         uploadImageButton = (ImageButton) findViewById(R.id.UploadImageButton);
+
+        // TODO: 6/23/2016 have some error checking avie!!!!!!!!!!!!!!!!!!! 
 
         cancelButton.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -60,11 +64,13 @@ public class CreateTelegram extends Activity {
             public void onClick(View view) {
                 Log.d("t", "clicked post");
 
+                Telegram telegram = new Telegram(uid, message, "TODO FOR AVIE", lat, lng, false);
+
                 // Send data to the maps activity
                 Intent i  = new Intent();
 
                 // Adds the "message" property to the intent so the main activity can access it
-                i.putExtra("message", editText.getText().toString());
+                i.putExtra("telegram", telegram);
 
                 // Sends it back to the MapsActivity.onActivityResult()
                 setResult(RESULT_OK, i);
