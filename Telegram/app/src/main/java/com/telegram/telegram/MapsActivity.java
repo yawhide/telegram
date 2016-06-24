@@ -298,6 +298,7 @@ public class MapsActivity extends FragmentActivity
                                         if (telegramObj.getString("uid") == (user != null ? user.getEmail() : testUserEmail)) continue;
                                         Telegram telegram = new Telegram(
                                                 telegramObj.getString("uid"),
+                                                telegramObj.getString("_id"),
                                                 telegramObj.getString("msg"),
                                                 telegramObj.getString("img"),
                                                 telegramObj.getJSONObject("loc").getJSONArray("coordinates").getDouble(1),
@@ -311,6 +312,7 @@ public class MapsActivity extends FragmentActivity
                                         if (telegramObj.getString("uid") == (user != null ? user.getEmail() : testUserEmail)) continue;
                                         Telegram telegram = new Telegram(
                                                 telegramObj.getString("uid"),
+                                                telegramObj.getString("_id"),
                                                 telegramObj.getString("msg"),
                                                 telegramObj.getString("img"),
                                                 telegramObj.getJSONObject("loc").getJSONArray("coordinates").getDouble(1),
@@ -347,6 +349,7 @@ public class MapsActivity extends FragmentActivity
 
 //    @Override
 //    public void OnMarkerClickListener(Marker marker) {
+//
 //
 //    }
 
