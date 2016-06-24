@@ -32,4 +32,12 @@
         android:layout_marginRight="10dp"
         android:layout_alignTop="@+id/CancelButton"
         android:layout_alignParentEnd="true" />
+
+    <ImageButton
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:id="@+id/UploadImageButton"
+        android:src="@android:drawable/ic_menu_camera"
+        android:layout_alignTop="@+id/TelegramMessage"
+        android:layout_alignEnd="@+id/PostButton" />
 </RelativeLayout>

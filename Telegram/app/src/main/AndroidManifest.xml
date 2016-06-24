@@ -40,10 +40,8 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
-        <activity android:name=".TelegramMessage" android:theme="@style/AppTheme.TelegramMessage">
+        <activity android:name=".CreateTelegram" android:theme="@style/AppTheme.CreateTelegram">
         </activity>
-
-        <service android:name=".GPS_Service"/>
 
     </application>
 
