@@ -10,7 +10,7 @@ master_db = 'test_telgram2'
 client = MongoClient()
 db = client[master_db]
 db.telegrams.create_index([("loc", '2dsphere')])
-db.users.create_index([("uid,", pymongo.ASCENDING)])
+db.users.create_index([("uid", pymongo.ASCENDING), ("tid", pymongo.ASCENDING)], unique=True)
 db.expiry.create_index([("expiry", pymongo.ASCENDING)])
 
 class Telegram (object):
@@ -31,13 +31,23 @@ def get_all():
   cursor = coll.find()
   return dumps(cursor)  
 
+
+# Really badly done right now. Must fix.
+# Have created a compound index on uid, tid to prevent duplicates in our users db
+# However, if a dup call is made, it throws an exception and doesn't insert
+# Server keeps running
 @app.route('/telegrams/seen', methods=['POST'])
 def mark_telegram_seen():
   uid = request.form.get('uid')
   tid = request.form.get('tid')
   exp = request.form.get('exp')
-  db.users.insert_one({'uid': uid, 'tid': tid})
-  db.expiry.insert_one({'tid': tid, 'expiry': exp})
+  
+  try:
+    db.users.insert_one({'uid': uid, 'tid': tid})
+    db.expiry.insert_one({'tid': tid, 'expiry': exp})
+  except:
+    pass
+  
   return dumps(0)
 
 
@@ -55,7 +65,7 @@ def telegrams_within ():
   uid = request.args.get('uid')
 
   seen_telegrams = get_uid_telegrams (uid)
-  uid_tele_set =  set([q['tid'] for q in seen_telegrams])
+  uid_tele_set =  set([str(q['tid']) for q in seen_telegrams])
 
   query = {"loc": {"$geoWithin": {"$centerSphere": [[float(lng), float(lat)], float(rad)/3963.2 ]}}}
   cursor = db.telegrams.find(query).sort('_id')
