@@ -57,6 +57,10 @@
         <activity
             android:name=".CreateTelegram"
             android:theme="@style/AppTheme.CreateTelegram" />
+
+        <activity
+            android:name=".ViewTelegram"
+            android:theme="@style/AppTheme.ViewTelegram" />
     </application>
 
 </manifest>

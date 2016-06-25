@@ -14,6 +14,7 @@ public class Telegram implements Serializable{
     private Double lat;
     private Double lng;
     private Boolean locked;
+    private Integer expiry;
 
     public Telegram(String uid, String tid, String msg, String img, Double lat, Double lng, Boolean locked) {
         this.uid = uid;
@@ -23,10 +24,23 @@ public class Telegram implements Serializable{
         this.lat = lat;
         this.lng = lng;
         this.locked = locked;
+        this.expiry = 172800;
     }
 
     public Telegram (String uid, String msg, String img, Double lat, Double lng, Boolean locked) {
         this(uid, "", msg, img, lat, lng, locked);
+    }
+
+    public String getUid() {
+        return uid;
+    }
+
+    public String getTid() {
+        return tid;
+    }
+
+    public String getMsg() {
+        return msg;
     }
 
     public double getLat() {
@@ -39,14 +53,22 @@ public class Telegram implements Serializable{
 
     public boolean isLocked() { return locked; }
 
-    public RequestBody createFormBody() {
+    public RequestBody createSeenFormBody() {
         return new FormBody.Builder()
-                .add("uid", uid)
-                .add("tid", tid)
-                .add("msg", msg)
-                .add("img", img)
-                .add("lat", lat.toString())
-                .add("lng", lng.toString())
+                .add ("uid", this.uid)
+                .add ("tid", this.tid)
+                .add ("exp", this.expiry.toString())
+                .build();
+    }
+
+    public RequestBody createDropFormBody() {
+        return new FormBody.Builder()
+                .add("uid", this.uid)
+                .add("tid", this.tid)
+                .add("msg", this.msg)
+                .add("img", this.img)
+                .add("lat", this.lat.toString())
+                .add("lng", this.lng.toString())
                 .build();
     }
 }

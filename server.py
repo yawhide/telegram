@@ -43,8 +43,7 @@ def mark_telegram_seen():
 
 def get_uid_telegrams(uid):
   cursor = db.users.find({"uid": uid})
-  telegrams = loads(dumps(cursor))
-  return set([q['tid'] for q in telegrams])
+  return loads(dumps(cursor))
 
 
 # The radius is in miles | Unlockable : 1 mile, Observable : 2 miles
@@ -55,7 +54,8 @@ def telegrams_within ():
   rad = request.args.get('rad')
   uid = request.args.get('uid')
 
-  uid_telegrams = get_uid_telegrams (uid)
+  seen_telegrams = get_uid_telegrams (uid)
+  uid_tele_set =  set([q['tid'] for q in seen_telegrams])
 
   query = {"loc": {"$geoWithin": {"$centerSphere": [[float(lng), float(lat)], float(rad)/3963.2 ]}}}
   cursor = db.telegrams.find(query).sort('_id')
@@ -66,13 +66,14 @@ def telegrams_within ():
   in_range_json = loads(dumps(cursor))
   locked_json = loads(dumps(cursor_locked))
 
-  in_range_json = [q for q in in_range_json if str(q['_id']) not in uid_telegrams]
+  in_range_json = [q for q in in_range_json if str(q['_id']) not in uid_tele_set]
   in_range = set([q['_id'] for q in in_range_json])
   out_of_range = [l for l in locked_json if  l['_id'] not in in_range]
 
   data = {}
   data['1'] = in_range_json
   data['2'] = out_of_range
+  data['3'] = seen_telegrams
 
   return dumps(data)
 

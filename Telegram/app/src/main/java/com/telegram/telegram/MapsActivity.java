@@ -1,6 +1,5 @@
 package com.telegram.telegram;
 
-import android.*;
 import android.Manifest;
 import android.app.AlertDialog;
 import android.content.DialogInterface;
@@ -8,6 +7,7 @@ import android.content.Intent;
 import android.content.IntentSender;
 import android.content.pm.ActivityInfo;
 import android.content.pm.PackageManager;
+import android.graphics.Point;
 import android.location.Location;
 import android.os.Build;
 import android.os.Bundle;
@@ -27,10 +27,8 @@ import com.google.android.gms.common.api.GoogleApiClient;
 import com.google.android.gms.common.api.PendingResult;
 import com.google.android.gms.common.api.ResultCallback;
 import com.google.android.gms.common.api.Status;
-import com.google.android.gms.location.LocationCallback;
 import com.google.android.gms.location.LocationListener;
 import com.google.android.gms.location.LocationRequest;
-import com.google.android.gms.location.LocationResult;
 import com.google.android.gms.location.LocationServices;
 import com.google.android.gms.location.LocationSettingsRequest;
 import com.google.android.gms.location.LocationSettingsResult;
@@ -39,8 +37,8 @@ import com.google.android.gms.location.LocationSettingsStatusCodes;
 import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.OnMapReadyCallback;
+import com.google.android.gms.maps.Projection;
 import com.google.android.gms.maps.SupportMapFragment;
-import com.google.android.gms.maps.model.BitmapDescriptor;
 import com.google.android.gms.maps.model.BitmapDescriptorFactory;
 import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.Marker;
@@ -48,16 +46,12 @@ import com.google.android.gms.maps.model.MarkerOptions;
 
 import java.io.IOException;
 import java.text.DateFormat;
-import java.util.Collection;
 import java.util.Date;
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.Iterator;
-import java.util.Set;
 
 import okhttp3.Call;
 import okhttp3.Callback;
-import okhttp3.FormBody;
 import okhttp3.MediaType;
 import okhttp3.OkHttpClient;
 import okhttp3.Request;
@@ -96,6 +90,7 @@ public class MapsActivity extends FragmentActivity
             UPDATE_INTERVAL_IN_MILLISECONDS / 2;
     private LocationListener mLocationListener;
     private float GOOGLE_MAP_DEFAULT_ZOOM = 16.0f;
+    private static final int ANIMATION_DURATION = 500;
 
     private FloatingActionButton fab;
 
@@ -149,6 +144,42 @@ public class MapsActivity extends FragmentActivity
                 .findFragmentById(R.id.map);
         mapFragment.getMapAsync(this);
 
+        mMap = mapFragment.getMap();
+
+        if (mMap != null) {
+            mMap.setOnMarkerClickListener(new GoogleMap.OnMarkerClickListener() {
+                @Override
+                public boolean onMarkerClick(Marker marker) {
+                    Telegram telegram = null;
+                    Boolean found = false;
+
+                    for (String key : unlockedTelegrams.keySet()) {
+                        if (key.equals(marker.getId())) {
+                            telegram = unlockedTelegrams.get(key);
+                            found = true;
+                            break;
+                        }
+                    }
+
+
+                    Projection projection = mMap.getProjection();
+                    LatLng trackedPosition = marker.getPosition();
+                    Point trackedPoint = projection.toScreenLocation(trackedPosition);
+                    LatLng newCameraLocation = projection.fromScreenLocation(trackedPoint);
+                    //mMap.animateCamera(CameraUpdateFactory.newLatLng(newCameraLocation), ANIMATION_DURATION, null);
+
+                    Intent i = new Intent(MapsActivity.this, ViewTelegram.class);
+                    i.putExtra("telegram", telegram);
+
+                    startActivityForResult(i, 124);
+
+
+                    return true;
+                }
+            });
+        }
+
+
         mLastUpdateTime = "";
         updateValuesFromBundle(savedInstanceState);
         buildGoogleApiClient();
@@ -176,6 +207,7 @@ public class MapsActivity extends FragmentActivity
         setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_LOCKED);
     }
 
+
     @Override
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
 
@@ -185,7 +217,7 @@ public class MapsActivity extends FragmentActivity
             // Extract the inputted text from the user
             final Telegram telegram = (Telegram) data.getExtras().get("telegram");
 
-            RequestBody formBody = telegram.createFormBody();
+            RequestBody formBody = telegram.createDropFormBody();
 
             try {
                 post(SERVER_URI + "drop", formBody, new Callback() {
@@ -238,6 +270,41 @@ public class MapsActivity extends FragmentActivity
             } else {
                 checkLocationSettings(CHECK_SETTINGS_INITIALIZE_LOCATION);
             }
+        }
+        else if (requestCode == 124 && resultCode == RESULT_OK) {
+            final Telegram telegram = (Telegram) data.getExtras().get("telegram");
+
+            RequestBody formBody = telegram.createSeenFormBody();
+            try {
+                post(SERVER_URI + "telegrams/seen", formBody, new Callback() {
+                    @Override
+                    public void onFailure(Call call, IOException e) {
+                        e.printStackTrace();
+                    }
+
+                    @Override
+                    public void onResponse(Call call, final Response response) throws IOException {
+                        if (!response.isSuccessful()) {
+                            throw new IOException("Unexpected code " + response);
+                        }
+                        // Read data on the worker thread
+                        final String responseData = response.body().string();
+
+                        // Run view-related code back on the main thread
+                        MapsActivity.this.runOnUiThread(new Runnable() {
+                            @Override
+                            public void run() {
+                                Log.d(TAG, responseData);
+                            }
+                        });
+                    }
+                });
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+
+
+
         }
     }
 
@@ -347,11 +414,7 @@ public class MapsActivity extends FragmentActivity
         });
     }
 
-//    @Override
-//    public void OnMarkerClickListener(Marker marker) {
-//
-//
-//    }
+
 
     /**
      * Adds a Telegram to the map and colours it according to unlockable or locked.
