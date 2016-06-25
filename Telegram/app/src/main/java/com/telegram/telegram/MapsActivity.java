@@ -93,6 +93,7 @@ public class MapsActivity extends FragmentActivity
     private LocationListener mLocationListener;
     private float GOOGLE_MAP_DEFAULT_ZOOM = 16.0f;
     private static final int ANIMATION_DURATION = 500;
+    private boolean movedCameraToFirstUpdate = false;
 
     private FloatingActionButton fab;
 
@@ -281,42 +282,36 @@ public class MapsActivity extends FragmentActivity
         mMap = googleMap;
         mMap.animateCamera(CameraUpdateFactory.zoomTo(GOOGLE_MAP_DEFAULT_ZOOM));
 
-        if (mMap != null) {
-            mMap.setOnMarkerClickListener(new GoogleMap.OnMarkerClickListener() {
-                @Override
-                public boolean onMarkerClick(Marker marker) {
-                    Telegram telegram = null;
-                    Boolean found = false;
+        mMap.setOnMarkerClickListener(new GoogleMap.OnMarkerClickListener() {
+            @Override
+            public boolean onMarkerClick(Marker marker) {
+                Telegram telegram = null;
+                Boolean found = false;
 
-                    for (String key : unlockedTelegrams.keySet()) {
-                        if (key.equals(marker.getId())) {
-                            telegram = unlockedTelegrams.get(key);
-                            found = true;
-                            break;
-                        }
+                for (String key : unlockedTelegrams.keySet()) {
+                    if (key.equals(marker.getId())) {
+                        telegram = unlockedTelegrams.get(key);
+                        found = true;
+                        break;
                     }
-
-
-                    Projection projection = mMap.getProjection();
-                    LatLng trackedPosition = marker.getPosition();
-                    Point trackedPoint = projection.toScreenLocation(trackedPosition);
-                    LatLng newCameraLocation = projection.fromScreenLocation(trackedPoint);
-                    //mMap.animateCamera(CameraUpdateFactory.newLatLng(newCameraLocation), ANIMATION_DURATION, null);
-
-                    Intent i = new Intent(MapsActivity.this, ViewTelegram.class);
-                    i.putExtra("telegram", telegram);
-
-                    startActivityForResult(i, 124);
-
-                    return true;
                 }
-            });
-        }
-        // Add a marker in Sydney and move the camera
-//        LatLng waterloo = new LatLng(43.4807540, -80.5242860);
-//        mMap.addMarker(new MarkerOptions().position(waterloo).title("Marker in Waterloo"));
-//        mMap.moveCamera(CameraUpdateFactory.newLatLng(waterloo));
+
+                Projection projection = mMap.getProjection();
+                LatLng trackedPosition = marker.getPosition();
+                Point trackedPoint = projection.toScreenLocation(trackedPosition);
+                LatLng newCameraLocation = projection.fromScreenLocation(trackedPoint);
+                //mMap.animateCamera(CameraUpdateFactory.newLatLng(newCameraLocation), ANIMATION_DURATION, null);
+
+                Intent i = new Intent(MapsActivity.this, ViewTelegram.class);
+                i.putExtra("telegram", telegram);
+
+                startActivityForResult(i, 124);
+
+                return true;
+            }
+        });
     }
+
 
     private void pollForNewTelegrams() {
 
@@ -530,8 +525,11 @@ public class MapsActivity extends FragmentActivity
             public void onLocationChanged(Location location) {
                 mCurrentLocation = location;
                 mLastUpdateTime = DateFormat.getTimeInstance().format(new Date());
-                updateUI();
-                mMap.moveCamera(CameraUpdateFactory.newLatLng(new LatLng(mCurrentLocation.getLatitude(), mCurrentLocation.getLongitude())));
+//                updateUI();
+                if (!movedCameraToFirstUpdate) {
+                    mMap.moveCamera(CameraUpdateFactory.newLatLng(new LatLng(mCurrentLocation.getLatitude(), mCurrentLocation.getLongitude())));
+                    movedCameraToFirstUpdate = true;
+                }
                 pollForNewTelegrams();
             }
         };
