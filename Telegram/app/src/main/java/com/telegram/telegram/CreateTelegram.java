@@ -90,9 +90,9 @@ public class CreateTelegram extends Activity {
                 Log.d("t", "clicked post");
                 final CharSequence[] items = { "Go back" };
 
-                if (message.isEmpty()) {
+                if (message.isEmpty() && uploadedImage.isEmpty()) {
                     AlertDialog.Builder builder = new AlertDialog.Builder(CreateTelegram.this);
-                    builder.setTitle("You need to add a message to your Telegram!");
+                    builder.setTitle("You need to add a message or image to your Telegram!");
                     builder.setItems(items, new DialogInterface.OnClickListener() {
                         @Override
                         public void onClick(DialogInterface dialog, int item) {
@@ -107,7 +107,6 @@ public class CreateTelegram extends Activity {
 
                 }
                 else {
-                    Log.d("t", "There is a message: " + message);
                     Telegram telegram = new Telegram(uid, message, uploadedImage, lat, lng, false);
 
                     // Send data to the maps activity
@@ -131,41 +130,36 @@ public class CreateTelegram extends Activity {
             public void onClick(View view) {
                 Log.d("t", "clicked upload image");
 
-                selectImage();
+                final CharSequence[] items = { "Take Photo", "Choose from Library",
+                        "Cancel" };
+
+                AlertDialog.Builder builder = new AlertDialog.Builder(CreateTelegram.this);
+                builder.setTitle("Add Photo!");
+                builder.setItems(items, new DialogInterface.OnClickListener() {
+                    @Override
+                    public void onClick(DialogInterface dialog, int item) {
+                        boolean result=Utility.checkPermission(CreateTelegram.this);
+
+                        if (items[item].equals("Take Photo")) {
+                            userChosenTask ="Take Photo";
+                            if(result)
+                                cameraIntent();
+
+                        } else if (items[item].equals("Choose from Library")) {
+                            userChosenTask ="Choose from Library";
+                            if(result)
+                                galleryIntent();
+
+                        } else if (items[item].equals("Cancel")) {
+                            dialog.dismiss();
+                        }
+                    }
+                });
+                builder.show();
             }
         });
-
-
     }
 
-    private void selectImage() {
-        final CharSequence[] items = { "Take Photo", "Choose from Library",
-                "Cancel" };
-
-        AlertDialog.Builder builder = new AlertDialog.Builder(CreateTelegram.this);
-        builder.setTitle("Add Photo!");
-        builder.setItems(items, new DialogInterface.OnClickListener() {
-            @Override
-            public void onClick(DialogInterface dialog, int item) {
-                boolean result=Utility.checkPermission(CreateTelegram.this);
-
-                if (items[item].equals("Take Photo")) {
-                    userChosenTask ="Take Photo";
-                    if(result)
-                        cameraIntent();
-
-                } else if (items[item].equals("Choose from Library")) {
-                    userChosenTask ="Choose from Library";
-                    if(result)
-                        galleryIntent();
-
-                } else if (items[item].equals("Cancel")) {
-                    dialog.dismiss();
-                }
-            }
-        });
-        builder.show();
-    }
 
     private void cameraIntent()
     {
