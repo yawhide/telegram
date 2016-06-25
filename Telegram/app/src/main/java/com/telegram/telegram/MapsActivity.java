@@ -144,42 +144,6 @@ public class MapsActivity extends FragmentActivity
                 .findFragmentById(R.id.map);
         mapFragment.getMapAsync(this);
 
-        mMap = mapFragment.getMap();
-
-        if (mMap != null) {
-            mMap.setOnMarkerClickListener(new GoogleMap.OnMarkerClickListener() {
-                @Override
-                public boolean onMarkerClick(Marker marker) {
-                    Telegram telegram = null;
-                    Boolean found = false;
-
-                    for (String key : unlockedTelegrams.keySet()) {
-                        if (key.equals(marker.getId())) {
-                            telegram = unlockedTelegrams.get(key);
-                            found = true;
-                            break;
-                        }
-                    }
-
-
-                    Projection projection = mMap.getProjection();
-                    LatLng trackedPosition = marker.getPosition();
-                    Point trackedPoint = projection.toScreenLocation(trackedPosition);
-                    LatLng newCameraLocation = projection.fromScreenLocation(trackedPoint);
-                    //mMap.animateCamera(CameraUpdateFactory.newLatLng(newCameraLocation), ANIMATION_DURATION, null);
-
-                    Intent i = new Intent(MapsActivity.this, ViewTelegram.class);
-                    i.putExtra("telegram", telegram);
-
-                    startActivityForResult(i, 124);
-
-
-                    return true;
-                }
-            });
-        }
-
-
         mLastUpdateTime = "";
         updateValuesFromBundle(savedInstanceState);
         buildGoogleApiClient();
@@ -271,7 +235,7 @@ public class MapsActivity extends FragmentActivity
                 checkLocationSettings(CHECK_SETTINGS_INITIALIZE_LOCATION);
             }
         }
-        else if (requestCode == 124 && resultCode == RESULT_OK) {
+        else if (requestCode == 124) {
             final Telegram telegram = (Telegram) data.getExtras().get("telegram");
 
             RequestBody formBody = telegram.createSeenFormBody();
@@ -312,6 +276,39 @@ public class MapsActivity extends FragmentActivity
     public void onMapReady(GoogleMap googleMap) {
         mMap = googleMap;
         mMap.animateCamera(CameraUpdateFactory.zoomTo(GOOGLE_MAP_DEFAULT_ZOOM));
+
+        if (mMap != null) {
+            mMap.setOnMarkerClickListener(new GoogleMap.OnMarkerClickListener() {
+                @Override
+                public boolean onMarkerClick(Marker marker) {
+                    Telegram telegram = null;
+                    Boolean found = false;
+
+                    for (String key : unlockedTelegrams.keySet()) {
+                        if (key.equals(marker.getId())) {
+                            telegram = unlockedTelegrams.get(key);
+                            found = true;
+                            break;
+                        }
+                    }
+
+
+                    Projection projection = mMap.getProjection();
+                    LatLng trackedPosition = marker.getPosition();
+                    Point trackedPoint = projection.toScreenLocation(trackedPosition);
+                    LatLng newCameraLocation = projection.fromScreenLocation(trackedPoint);
+                    //mMap.animateCamera(CameraUpdateFactory.newLatLng(newCameraLocation), ANIMATION_DURATION, null);
+
+                    Intent i = new Intent(MapsActivity.this, ViewTelegram.class);
+                    i.putExtra("telegram", telegram);
+
+                    startActivityForResult(i, 124);
+
+
+                    return true;
+                }
+            });
+        }
         // Add a marker in Sydney and move the camera
 //        LatLng waterloo = new LatLng(43.4807540, -80.5242860);
 //        mMap.addMarker(new MarkerOptions().position(waterloo).title("Marker in Waterloo"));
