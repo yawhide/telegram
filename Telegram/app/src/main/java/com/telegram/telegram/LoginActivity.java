@@ -115,9 +115,15 @@ public class LoginActivity extends AppCompatActivity implements
     // [START handleSignInResult]
     private void handleSignInResult(GoogleSignInResult result) {
         Log.d(TAG, "handleSignInResult:" + result.isSuccess());
-
-        // Signed in successfully, show authenticated UI.
-        GoogleSignInAccount acct = result.getSignInAccount();
+        // TODO: 6/24/2016 uncomment below for demo!
+//        if (result.isSuccess()) {
+//            Intent i = new Intent(this, MapsActivity.class);
+//            i.putExtra("oath", result.getSignInAccount());
+//            startActivityForResult(i, 69);
+//            finish();
+//        }
+//
+//        // Signed in successfully, show authenticated UI.
         Intent i = new Intent(this, MapsActivity.class);
         if (result.isSuccess()) {
             i.putExtra("oath", result.getSignInAccount());
@@ -126,6 +132,7 @@ public class LoginActivity extends AppCompatActivity implements
         }
         startActivityForResult(i, 69);
         finish();
+
     }
     // [END handleSignInResult]
 

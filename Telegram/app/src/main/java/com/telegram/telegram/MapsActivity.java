@@ -91,6 +91,7 @@ public class MapsActivity extends FragmentActivity
     private LocationListener mLocationListener;
     private float GOOGLE_MAP_DEFAULT_ZOOM = 16.0f;
     private static final int ANIMATION_DURATION = 500;
+    private boolean movedCameraToFirstUpdate = false;
 
     private FloatingActionButton fab;
 
@@ -500,8 +501,11 @@ public class MapsActivity extends FragmentActivity
             public void onLocationChanged(Location location) {
                 mCurrentLocation = location;
                 mLastUpdateTime = DateFormat.getTimeInstance().format(new Date());
-                updateUI();
-                mMap.moveCamera(CameraUpdateFactory.newLatLng(new LatLng(mCurrentLocation.getLatitude(), mCurrentLocation.getLongitude())));
+//                updateUI();
+                if (!movedCameraToFirstUpdate) {
+                    mMap.moveCamera(CameraUpdateFactory.newLatLng(new LatLng(mCurrentLocation.getLatitude(), mCurrentLocation.getLongitude())));
+                    movedCameraToFirstUpdate = true;
+                }
                 pollForNewTelegrams();
             }
         };
