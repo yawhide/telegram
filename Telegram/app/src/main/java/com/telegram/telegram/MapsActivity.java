@@ -49,6 +49,8 @@ import java.text.DateFormat;
 import java.util.Date;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.Set;
+import java.util.TreeSet;
 
 import okhttp3.Call;
 import okhttp3.Callback;
@@ -238,7 +240,7 @@ public class MapsActivity extends FragmentActivity
         else if (requestCode == 124) {
             final Telegram telegram = (Telegram) data.getExtras().get("telegram");
 
-            RequestBody formBody = telegram.createSeenFormBody();
+            RequestBody formBody = telegram.createSeenFormBody(user != null ? user.getEmail() : testUserEmail);
             try {
                 post(SERVER_URI + "telegrams/seen", formBody, new Callback() {
                     @Override
@@ -253,6 +255,8 @@ public class MapsActivity extends FragmentActivity
                         }
                         // Read data on the worker thread
                         final String responseData = response.body().string();
+                        telegram.setSeen(true);
+                        pollForNewTelegrams ();
 
                         // Run view-related code back on the main thread
                         MapsActivity.this.runOnUiThread(new Runnable() {
@@ -304,7 +308,6 @@ public class MapsActivity extends FragmentActivity
 
                     startActivityForResult(i, 124);
 
-
                     return true;
                 }
             });
@@ -352,36 +355,63 @@ public class MapsActivity extends FragmentActivity
                                 try {
                                     JSONArray unlockedJsonArray = jsonResp.getJSONArray("1");
                                     JSONArray lockedJsonArray = jsonResp.getJSONArray("2");
+                                    JSONArray seenTelegramsArray = jsonResp.getJSONArray("3");
 
                                     // Create these arrays for later if we need them
                                     ArrayList<Telegram> unlocked = new ArrayList<Telegram>();
                                     ArrayList<Telegram> locked = new ArrayList<Telegram>();
 
+                                    Set<String> seen  = new TreeSet<String>();
+
+                                    for (int i = 0; i < seenTelegramsArray.length(); i++) {
+                                        JSONObject telegramObj = seenTelegramsArray.getJSONObject(i);
+                                        if (telegramObj.getString("uid") == (user != null ? user.getEmail() : testUserEmail)) continue;
+                                        seen.add(telegramObj.getString("tid"));
+                                    }
+
                                     for (int i = 0; i < unlockedJsonArray.length(); i++) {
                                         JSONObject telegramObj = unlockedJsonArray.getJSONObject(i);
                                         if (telegramObj.getString("uid") == (user != null ? user.getEmail() : testUserEmail)) continue;
+                                        JSONObject tid = (JSONObject) telegramObj.get("_id");
+                                        String strTid = (String) tid.get("$oid");
                                         Telegram telegram = new Telegram(
                                                 telegramObj.getString("uid"),
-                                                telegramObj.getString("_id"),
+                                                strTid,
                                                 telegramObj.getString("msg"),
                                                 telegramObj.getString("img"),
                                                 telegramObj.getJSONObject("loc").getJSONArray("coordinates").getDouble(1),
                                                 telegramObj.getJSONObject("loc").getJSONArray("coordinates").getDouble(0),
                                                 false);
+
+                                        if (seen.contains(strTid)) {
+                                            telegram.setSeen(true);
+                                        } else{
+                                            telegram.setSeen(false);
+                                        }
+
                                         unlocked.add(telegram);
                                     }
 
                                     for (int i = 0; i < lockedJsonArray.length(); i++) {
                                         JSONObject telegramObj = lockedJsonArray.getJSONObject(i);
                                         if (telegramObj.getString("uid") == (user != null ? user.getEmail() : testUserEmail)) continue;
+                                        JSONObject tid = (JSONObject) telegramObj.get("_id");
+                                        String strTid = (String) tid.get("$oid");
                                         Telegram telegram = new Telegram(
                                                 telegramObj.getString("uid"),
-                                                telegramObj.getString("_id"),
+                                                strTid,
                                                 telegramObj.getString("msg"),
                                                 telegramObj.getString("img"),
                                                 telegramObj.getJSONObject("loc").getJSONArray("coordinates").getDouble(1),
                                                 telegramObj.getJSONObject("loc").getJSONArray("coordinates").getDouble(0),
                                                 true);
+
+                                        if (seen.contains(strTid)) {
+                                            telegram.setSeen(true);
+                                        } else{
+                                            telegram.setSeen(false);
+                                        }
+
                                         locked.add(telegram);
                                     }
                                     unlockedTelegrams.clear();
@@ -418,7 +448,7 @@ public class MapsActivity extends FragmentActivity
      * @param telegram
      */
     private String addTelegramToMap(Telegram telegram) {
-        float colour = telegram.isLocked() ? BitmapDescriptorFactory.HUE_RED : BitmapDescriptorFactory.HUE_GREEN;
+        float colour = telegram.getSeen()? BitmapDescriptorFactory.HUE_YELLOW : telegram.isLocked() ? BitmapDescriptorFactory.HUE_RED : BitmapDescriptorFactory.HUE_GREEN;
         Marker marker = mMap.addMarker(new MarkerOptions()
                         .position(new LatLng(telegram.getLat(), telegram.getLng()))
                         .icon(BitmapDescriptorFactory.defaultMarker(colour)));

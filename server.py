@@ -65,8 +65,7 @@ def telegrams_within ():
   uid = request.args.get('uid')
 
   seen_telegrams = get_uid_telegrams (uid)
-  uid_tele_set =  set([str(q['tid']) for q in seen_telegrams])
-
+  
   query = {"loc": {"$geoWithin": {"$centerSphere": [[float(lng), float(lat)], float(rad)/3963.2 ]}}}
   cursor = db.telegrams.find(query).sort('_id')
   
@@ -76,7 +75,6 @@ def telegrams_within ():
   in_range_json = loads(dumps(cursor))
   locked_json = loads(dumps(cursor_locked))
 
-  in_range_json = [q for q in in_range_json if str(q['_id']) not in uid_tele_set]
   in_range = set([q['_id'] for q in in_range_json])
   out_of_range = [l for l in locked_json if  l['_id'] not in in_range]
 

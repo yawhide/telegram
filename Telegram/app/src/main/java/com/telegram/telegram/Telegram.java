@@ -15,6 +15,7 @@ public class Telegram implements Serializable{
     private Double lng;
     private Boolean locked;
     private Integer expiry;
+    private Boolean seen;
 
     public Telegram(String uid, String tid, String msg, String img, Double lat, Double lng, Boolean locked) {
         this.uid = uid;
@@ -25,10 +26,22 @@ public class Telegram implements Serializable{
         this.lng = lng;
         this.locked = locked;
         this.expiry = 172800;
+        this.seen = false;
     }
 
     public Telegram (String uid, String msg, String img, Double lat, Double lng, Boolean locked) {
         this(uid, "", msg, img, lat, lng, locked);
+    }
+
+    public void setSeen(Boolean seen) {
+        this.seen = seen;
+        if (this.seen) {
+            this.locked = false;
+        }
+    }
+
+    public Boolean getSeen() {
+        return this.seen;
     }
 
     public String getUid() {
@@ -53,9 +66,10 @@ public class Telegram implements Serializable{
 
     public boolean isLocked() { return locked; }
 
-    public RequestBody createSeenFormBody() {
+    // This is the user that has seen the telegram - not necessarily the user that has created the telegram
+    public RequestBody createSeenFormBody(String uid) {
         return new FormBody.Builder()
-                .add ("uid", this.uid)
+                .add ("uid", uid)
                 .add ("tid", this.tid)
                 .add ("exp", this.expiry.toString())
                 .build();
