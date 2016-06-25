@@ -1,5 +1,7 @@
 package com.telegram.telegram;
 
+import android.util.Log;
+
 import java.io.Serializable;
 
 import okhttp3.FormBody;
@@ -43,12 +45,18 @@ public class Telegram implements Serializable{
         return msg;
     }
 
+    public String getImg() { return img; }
+
     public double getLat() {
         return lat;
     }
 
     public double getLng() {
         return lng;
+    }
+
+    public void setImg(String img) {
+        this.img = img;
     }
 
     public boolean isLocked() { return locked; }
@@ -62,6 +70,11 @@ public class Telegram implements Serializable{
     }
 
     public RequestBody createDropFormBody() {
+        if (this.img.isEmpty()) {
+            setImg("NO IMAGE UPLOADED");
+        }
+
+        Log.d("t", "GOING TO DROP THIS: " + this.img);
         return new FormBody.Builder()
                 .add("uid", this.uid)
                 .add("tid", this.tid)

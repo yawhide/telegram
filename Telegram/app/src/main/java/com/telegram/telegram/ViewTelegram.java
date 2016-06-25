@@ -2,13 +2,17 @@ package com.telegram.telegram;
 
 import android.app.Activity;
 import android.content.Intent;
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
 import android.os.Bundle;
+import android.util.Base64;
 import android.util.DisplayMetrics;
 import android.util.Log;
 import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.ImageButton;
+import android.widget.ImageView;
 import android.widget.TextView;
 
 import org.w3c.dom.Text;
@@ -20,7 +24,7 @@ public class ViewTelegram extends Activity {
 
     private TextView msg, uid, tid;
     private Button okayButton;
-
+    private ImageView imagePreview;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -35,6 +39,9 @@ public class ViewTelegram extends Activity {
         uid = (TextView) findViewById(R.id.user);
         msg = (TextView) findViewById(R.id.msg);
 
+        // Image view here to get images that are uploaded with a telegram
+        imagePreview = (ImageView) findViewById(R.id.ImagePreview);
+
         DisplayMetrics dm = new DisplayMetrics();
         getWindowManager().getDefaultDisplay().getMetrics(dm);
 
@@ -46,6 +53,11 @@ public class ViewTelegram extends Activity {
 
         uid.setText(telegram.getUid());
         msg.setText(telegram.getMsg());
+
+        // Only put add the image preview if there is an image string
+        if (!telegram.getImg().isEmpty()) {
+            imagePreview.setImageBitmap(base64ToBitmap(telegram.getImg()));
+        }
 
 
         okayButton = (Button) findViewById(R.id.OkayButton);
@@ -63,5 +75,10 @@ public class ViewTelegram extends Activity {
             }
         });
 
+    }
+
+    private Bitmap base64ToBitmap(String b64) {
+        byte[] imageAsBytes = Base64.decode(b64.getBytes(), Base64.DEFAULT);
+        return BitmapFactory.decodeByteArray(imageAsBytes, 0, imageAsBytes.length);
     }
 }
