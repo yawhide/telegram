@@ -122,8 +122,8 @@ public class LoginActivity extends AppCompatActivity implements
 //            startActivityForResult(i, 69);
 //            finish();
 //        }
-//
-//        // Signed in successfully, show authenticated UI.
+
+        // Signed in successfully, show authenticated UI.
         Intent i = new Intent(this, MapsActivity.class);
         if (result.isSuccess()) {
             i.putExtra("oath", result.getSignInAccount());

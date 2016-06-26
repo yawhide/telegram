@@ -59,7 +59,6 @@ public class ViewTelegram extends Activity {
             imagePreview.setImageBitmap(base64ToBitmap(telegram.getImg()));
         }
 
-
         okayButton = (Button) findViewById(R.id.OkayButton);
 
         okayButton.setOnClickListener(new View.OnClickListener() {
