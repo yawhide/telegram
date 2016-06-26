@@ -3,9 +3,12 @@ from pymongo import MongoClient, GEO2D
 from bson.json_util import dumps,loads
 import json
 import pymongo
+
+
 import boto
 from boto.s3.key import Key
 from uuid import uuid4
+
 
 app = Flask(__name__)
 app.debug = True
@@ -22,6 +25,7 @@ AWS_SECRET_ACCESS_KEY = 'PRk/cT2syeJXUnmeHoERSpMP7jkDCsh2oOpA6VgP'
 conn = boto.connect_s3(AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY)
 bucket = conn.get_bucket('telegramimages')
 bucket.set_acl('public-read')
+
 
 class Telegram (object):
   def __init__ (self, uid, msg, img, lat, lng):
@@ -40,7 +44,6 @@ def get_all():
   coll = db['telegrams']
   cursor = coll.find()
   return dumps(cursor)
-
 
 # Really badly done right now. Must fix.
 # Have created a compound index on uid, tid to prevent duplicates in our users db
