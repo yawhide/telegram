@@ -64,7 +64,15 @@
             android:layout_marginLeft="40px"
             android:layout_weight="0.50"
             android:paddingTop="20px" />
+
     </LinearLayout>
+
+    <ImageView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:scaleType= "fitCenter"
+        android:paddingTop="20px"
+        android:id="@+id/ImagePreview" />
 
 
 
@@ -79,9 +87,5 @@
         android:paddingTop="10px"
         />
 
-    <ImageView
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:id="@+id/ImagePreview" />
 
 </LinearLayout>
