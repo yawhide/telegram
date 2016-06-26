@@ -107,7 +107,7 @@ def drop_telegram():
   lat = request.form.get('lat')
   lng = request.form.get ('lng')
 
-  s3key = uuid4()
+  s3key = str(uuid4())
 
   k = Key(bucket)
   k.key = s3key
