@@ -61,7 +61,6 @@ public class ViewTelegram extends Activity {
             getWindow().setLayout((int)(width*0.8), (int)(height*0.3));
         }
 
-
         okayButton = (Button) findViewById(R.id.OkayButton);
 
         okayButton.setOnClickListener(new View.OnClickListener() {

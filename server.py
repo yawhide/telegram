@@ -4,6 +4,14 @@ from bson.json_util import dumps,loads
 import json
 import pymongo
 
+
+import boto
+import boto.s3
+import sys
+from boto.s3.key import Key
+from uuid import uuid4
+
+
 app = Flask(__name__)
 app.debug = True
 master_db = 'test_telgram4'
@@ -12,6 +20,14 @@ db = client[master_db]
 db.telegrams.create_index([("loc", '2dsphere')])
 db.users.create_index([("uid", pymongo.ASCENDING), ("tid", pymongo.ASCENDING)], unique=True)
 db.expiry.create_index([("expiry", pymongo.ASCENDING)])
+
+AWS_ACCESS_KEY_ID = 'AKIAIVT3X6FRFZ4LP62Q'
+AWS_SECRET_ACCESS_KEY = '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'
+
+conn = boto.connect_s3(AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY)
+bucket = conn.get_bucket('telegramimages')
+bucket.set_acl('public-read')
+
 
 class Telegram (object):
   def __init__ (self, uid, msg, img, lat, lng):
@@ -29,8 +45,7 @@ def get_users():
 def get_all():
   coll = db['telegrams']
   cursor = coll.find()
-  return dumps(cursor)  
-
+  return dumps(cursor)
 
 # Really badly done right now. Must fix.
 # Have created a compound index on uid, tid to prevent duplicates in our users db
@@ -41,13 +56,13 @@ def mark_telegram_seen():
   uid = request.form.get('uid')
   tid = request.form.get('tid')
   exp = request.form.get('exp')
-  
+
   try:
     db.users.insert_one({'uid': uid, 'tid': tid})
     db.expiry.insert_one({'tid': tid, 'expiry': exp})
   except:
     pass
-  
+
   return dumps(0)
 
 
@@ -65,10 +80,10 @@ def telegrams_within ():
   uid = request.args.get('uid')
 
   seen_telegrams = get_uid_telegrams (uid)
-  
+
   query = {"loc": {"$geoWithin": {"$centerSphere": [[float(lng), float(lat)], float(rad)/3963.2 ]}}}
   cursor = db.telegrams.find(query).sort('_id')
-  
+
   query_locked = {"loc": {"$geoWithin": {"$centerSphere": [[float(lng), float(lat)], (float(rad)+2)/3963.2 ]}}}
   cursor_locked = db.telegrams.find(query_locked).sort('_id')
 
@@ -94,8 +109,17 @@ def drop_telegram():
   lat = request.form.get('lat')
   lng = request.form.get ('lng')
 
-  telegram = Telegram (uid, msg, img, lat, lng)
+  s3key = uuid4()
+
+  k = Key(bucket)
+  k.key = s3key
+  k.set_contents_from_string(img)
+
+  imgUrl = 'https://s3-us-west-2.amazonaws.com/telegramimages/' + s3key
+
+  telegram = Telegram (uid, msg, imgUrl, lat, lng)
   result = db.telegrams.insert_one(telegram.__dict__)
+
   return dumps(result.inserted_id)
 
 if __name__ == "__main__":
