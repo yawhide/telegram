@@ -74,14 +74,13 @@ public class ViewTelegram extends Activity {
             @Override
             public void onClick(View view) {
                 Log.d("t", "clicked okay");
-
-                Intent i = new Intent();
-                i.putExtra("telegram", telegram);
-                setResult(124, i);
-
                 finish();
             }
         });
+
+        Intent i = new Intent();
+        i.putExtra("telegram", telegram);
+        setResult(124, i);
 
     }
 
