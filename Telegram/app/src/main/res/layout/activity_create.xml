@@ -13,7 +13,9 @@
         android:layout_alignParentStart="true"
         android:layout_marginLeft="10dp"
         android:layout_marginTop="10dp"
-        android:hint="Enter your Telegram" />
+        android:hint="Enter your Telegram"
+        android:autoText="false"
+        android:layout_toStartOf="@+id/PostButton" />
 
     <Button
         style="?android:attr/buttonStyleSmall"
