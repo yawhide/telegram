@@ -85,7 +85,7 @@ public class Telegram implements Serializable{
 
     public RequestBody createDropFormBody() {
         if (this.img.isEmpty()) {
-            setImg("NO IMAGE UPLOADED");
+            setImg("");
         }
 
         Log.d("t", "GOING TO DROP THIS: " + this.img);
