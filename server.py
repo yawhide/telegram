@@ -12,7 +12,7 @@ from uuid import uuid4
 
 app = Flask(__name__)
 app.debug = True
-master_db = 'test_telgram4'
+master_db = 'test_telgram5'
 client = MongoClient()
 db = client[master_db]
 db.telegrams.create_index([("loc", '2dsphere')])
