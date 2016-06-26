@@ -110,10 +110,9 @@ def drop_telegram():
   if (img):
     s3key = str(uuid4())
     k = Key(bucket)
-    k.key = s3key
-    k.set_contents_from_string(img)
-
-    imgUrl = 'https://s3-us-west-2.amazonaws.com/telegramimages/' + s3key
+    k.key = s3key + '.png'
+    k.set_contents_from_string(img.decode('base64'))
+    imgUrl = 'https://s3-us-west-2.amazonaws.com/telegramimages/' + s3key + '.png'
 
   telegram = Telegram (uid, msg, imgUrl, lat, lng)
   result = db.telegrams.insert_one(telegram.__dict__)
