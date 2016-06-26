@@ -1,0 +1,48 @@
+{
+  "project_info": {
+    "project_number": "763855974437",
+    "project_id": "telegram-1344"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:763855974437:android:745f42029cf0f1c5",
+        "android_client_info": {
+          "package_name": "com.telegram.telegram"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "763855974437-tv558cg12ae3pq11uu5fs6rbb0ta4did.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.telegram.telegram",
+            "certificate_hash": "A280A19BA0C7CF153DDCB1336D25C7B7B1622D92"
+          }
+        },
+        {
+          "client_id": "763855974437-3tg88vde3de1n74hv6kjpg2ig2ig0m30.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDtnfpEKSF8ZoowAkVBnk8NLAdDI7W-X3M"
+        }
+      ],
+      "services": {
+        "analytics_service": {
+          "status": 1
+        },
+        "appinvite_service": {
+          "status": 1,
+          "other_platform_oauth_client": []
+        },
+        "ads_service": {
+          "status": 1
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
