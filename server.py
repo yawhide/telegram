@@ -4,8 +4,6 @@ from bson.json_util import dumps,loads
 import json
 import pymongo
 import boto
-import boto.s3
-import sys
 from boto.s3.key import Key
 from uuid import uuid4
 
