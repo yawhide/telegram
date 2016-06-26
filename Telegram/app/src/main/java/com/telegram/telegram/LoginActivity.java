@@ -39,6 +39,8 @@ public class LoginActivity extends AppCompatActivity implements
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_login);
 
+        getSupportActionBar().hide();
+
         // [START configure_signin]
         // Configure sign-in to request the user's ID, email address, and basic
         // profile. ID and basic profile are included in DEFAULT_SIGN_IN.
@@ -116,22 +118,22 @@ public class LoginActivity extends AppCompatActivity implements
     private void handleSignInResult(GoogleSignInResult result) {
         Log.d(TAG, "handleSignInResult:" + result.isSuccess());
         // TODO: 6/24/2016 uncomment below for demo!
-//        if (result.isSuccess()) {
-//            Intent i = new Intent(this, MapsActivity.class);
-//            i.putExtra("oath", result.getSignInAccount());
-//            startActivityForResult(i, 69);
-//            finish();
-//        }
+        if (result.isSuccess()) {
+            Intent i = new Intent(this, MapsActivity.class);
+            i.putExtra("oath", result.getSignInAccount());
+            startActivityForResult(i, 69);
+            finish();
+        }
 
         // Signed in successfully, show authenticated UI.
-        Intent i = new Intent(this, MapsActivity.class);
-        if (result.isSuccess()) {
-            i.putExtra("oath", result.getSignInAccount());
-        } else {
-            i.putExtra("fail", "avie@gmail.com");
-        }
-        startActivityForResult(i, 69);
-        finish();
+//        Intent i = new Intent(this, MapsActivity.class);
+//        if (result.isSuccess()) {
+//            i.putExtra("oath", result.getSignInAccount());
+//        } else {
+//            i.putExtra("fail", "avie@gmail.com");
+//        }
+//        startActivityForResult(i, 69);
+//        finish();
 
     }
     // [END handleSignInResult]
