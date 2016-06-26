@@ -4,6 +4,7 @@ import android.app.Activity;
 import android.content.Intent;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
+import android.graphics.drawable.BitmapDrawable;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.util.Base64;
@@ -51,7 +52,6 @@ public class ViewTelegram extends Activity {
 
         int width = dm.widthPixels;
         int height = dm.heightPixels;
-
 
         uid.setText(telegram.getUid());
         msg.setText(telegram.getMsg());
@@ -116,7 +116,9 @@ public class ViewTelegram extends Activity {
                 Runs on the UI thread after doInBackground(Params...).
          */
         protected void onPostExecute(Bitmap result){
-            imageView.setImageBitmap(result);
+            int nh = (int) ( result.getHeight() * (512.0 / result.getWidth()) );
+            Bitmap scaled = Bitmap.createScaledBitmap(result, 512, nh, true);
+            imageView.setImageBitmap(scaled);
         }
     }
 }
