@@ -5,8 +5,6 @@ import json
 import pymongo
 
 import boto
-import boto.s3
-import sys
 from boto.s3.key import Key
 from uuid import uuid4
 
@@ -107,14 +105,14 @@ def drop_telegram():
   img = request.form.get('img')
   lat = request.form.get('lat')
   lng = request.form.get ('lng')
+  imgUrl = ''
+  if (img):
+    s3key = str(uuid4())
+    k = Key(bucket)
+    k.key = s3key
+    k.set_contents_from_string(img)
 
-  s3key = uuid4()
-
-  k = Key(bucket)
-  k.key = s3key
-  k.set_contents_from_string(img)
-
-  imgUrl = 'https://s3-us-west-2.amazonaws.com/telegramimages/' + s3key
+    imgUrl = 'https://s3-us-west-2.amazonaws.com/telegramimages/' + s3key
 
   telegram = Telegram (uid, msg, imgUrl, lat, lng)
   result = db.telegrams.insert_one(telegram.__dict__)

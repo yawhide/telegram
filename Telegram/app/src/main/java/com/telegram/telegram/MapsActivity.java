@@ -206,8 +206,8 @@ public class MapsActivity extends FragmentActivity
                             @Override
                             public void run() {
                                 Log.d(TAG, responseData);
-//                                String id = addTelegramToMap(telegram);
-//                                unlockedTelegrams.put(id, telegram);
+                                String id = addTelegramToMap(telegram);
+                                unlockedTelegrams.put(id, telegram);
                             }
                         });
                     }
