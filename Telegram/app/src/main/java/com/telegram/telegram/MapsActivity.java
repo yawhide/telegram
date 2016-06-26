@@ -296,16 +296,28 @@ public class MapsActivity extends FragmentActivity
                     }
                 }
 
-                Projection projection = mMap.getProjection();
-                LatLng trackedPosition = marker.getPosition();
-                Point trackedPoint = projection.toScreenLocation(trackedPosition);
-                LatLng newCameraLocation = projection.fromScreenLocation(trackedPoint);
-                //mMap.animateCamera(CameraUpdateFactory.newLatLng(newCameraLocation), ANIMATION_DURATION, null);
+                if (found) {
+                    Intent i = new Intent(MapsActivity.this, ViewTelegram.class);
+                    i.putExtra("telegram", telegram);
 
-                Intent i = new Intent(MapsActivity.this, ViewTelegram.class);
-                i.putExtra("telegram", telegram);
+                    startActivityForResult(i, 124);
+                }
+                else {
+                    final CharSequence[] items = { "I understand" };
+                    AlertDialog.Builder builder = new AlertDialog.Builder(MapsActivity.this);
+                    builder.setTitle("You must be in a 1 mile radius to view this telegram.");
+                    builder.setItems(items, new DialogInterface.OnClickListener() {
+                        @Override
+                        public void onClick(DialogInterface dialog, int item) {
 
-                startActivityForResult(i, 124);
+                            if (items[item].equals("I understand")) {
+                                dialog.dismiss();
+                            }
+                        }
+                    });
+
+                    builder.show();
+                }
 
                 return true;
             }
