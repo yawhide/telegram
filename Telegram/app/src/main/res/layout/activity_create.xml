@@ -1,7 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
 <RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent" android:layout_height="match_parent"
-    android:background="#ffffff">
+    android:background="#ffffff"
+    tools:context=".CreateTelegram">
 
     <EditText
         android:layout_width="wrap_content"
@@ -40,4 +42,12 @@
         android:src="@android:drawable/ic_menu_camera"
         android:layout_alignTop="@+id/TelegramMessage"
         android:layout_alignEnd="@+id/PostButton" />
+
+    <ImageView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:id="@+id/ImagePreview"
+        android:layout_below="@+id/PostButton"
+        android:layout_alignEnd="@+id/UploadImageButton" />
+
 </RelativeLayout>
