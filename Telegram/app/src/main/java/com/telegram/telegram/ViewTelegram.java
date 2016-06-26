@@ -48,8 +48,6 @@ public class ViewTelegram extends Activity {
         int width = dm.widthPixels;
         int height = dm.heightPixels;
 
-        // Arbitrarily set the popup window height and width
-        getWindow().setLayout((int)(width*0.8), (int)(height*0.3));
 
         uid.setText(telegram.getUid());
         msg.setText(telegram.getMsg());
@@ -57,6 +55,10 @@ public class ViewTelegram extends Activity {
         // Only put add the image preview if there is an image string
         if (!telegram.getImg().isEmpty()) {
             imagePreview.setImageBitmap(base64ToBitmap(telegram.getImg()));
+            getWindow().setLayout((int)(width), (int)(height));
+        }
+        else {
+            getWindow().setLayout((int)(width*0.8), (int)(height*0.3));
         }
 
         okayButton = (Button) findViewById(R.id.OkayButton);
