@@ -2,6 +2,7 @@ package com.telegram.telegram;
 
 import android.app.Activity;
 import android.content.Intent;
+import android.content.pm.ActivityInfo;
 import android.graphics.Bitmap;
 import android.os.Bundle;
 import android.os.Environment;
@@ -44,6 +45,7 @@ public class CreateTelegram extends Activity {
         super.onCreate(savedInstanceState);
 
         setContentView(R.layout.activity_create);
+        setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_LOCKED);
 
         Intent intent = getIntent();
 
@@ -230,7 +232,6 @@ public class CreateTelegram extends Activity {
         String imgString = Base64.encodeToString(byteFormat, Base64.NO_WRAP);
         return imgString;
     }
-
 
     private void onCaptureImageResult(Intent data) {
         Bitmap thumbnail = (Bitmap) data.getExtras().get("data");
