@@ -2,6 +2,7 @@ package com.telegram.telegram;
 
 import android.app.Activity;
 import android.content.Intent;
+import android.content.pm.ActivityInfo;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.drawable.BitmapDrawable;
@@ -36,6 +37,7 @@ public class ViewTelegram extends Activity {
         super.onCreate(savedInstanceState);
 
         setContentView(R.layout.info_window);
+        setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_LOCKED);
 
         Intent intent = getIntent();
 
