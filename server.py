@@ -6,7 +6,7 @@ import pymongo
 
 app = Flask(__name__)
 app.debug = True
-master_db = 'test_telgram2'
+master_db = 'test_telgram4'
 client = MongoClient()
 db = client[master_db]
 db.telegrams.create_index([("loc", '2dsphere')])
