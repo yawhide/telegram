@@ -87,7 +87,7 @@ public class MapsActivity extends FragmentActivity
     protected final static String REQUESTING_LOCATION_UPDATES_KEY = "requesting-location-updates-key";
     protected final static String LOCATION_KEY = "location-key";
     protected final static String LAST_UPDATED_TIME_STRING_KEY = "last-updated-time-string-key";
-    public static final long UPDATE_INTERVAL_IN_MILLISECONDS = 30000;
+    public static final long UPDATE_INTERVAL_IN_MILLISECONDS = 5000;
     public static final long FASTEST_UPDATE_INTERVAL_IN_MILLISECONDS =
             UPDATE_INTERVAL_IN_MILLISECONDS / 2;
     private LocationListener mLocationListener;
@@ -504,20 +504,13 @@ public class MapsActivity extends FragmentActivity
     // ================================ Location stuff ============================ //
     private void updateValuesFromBundle(Bundle savedInstanceState) {
         if (savedInstanceState != null) {
-            // Update the value of mCurrentLocation from the Bundle and update the
-            // UI to show the correct latitude and longitude.
             if (savedInstanceState.keySet().contains(LOCATION_KEY)) {
-                // Since LOCATION_KEY was found in the Bundle, we can be sure that
-                // mCurrentLocationis not null.
                 mCurrentLocation = savedInstanceState.getParcelable(LOCATION_KEY);
             }
-
-            // Update the value of mLastUpdateTime from the Bundle and update the UI.
             if (savedInstanceState.keySet().contains(LAST_UPDATED_TIME_STRING_KEY)) {
                 mLastUpdateTime = savedInstanceState.getString(
                         LAST_UPDATED_TIME_STRING_KEY);
             }
-            updateUI();
         }
     }
 
@@ -537,7 +530,6 @@ public class MapsActivity extends FragmentActivity
             public void onLocationChanged(Location location) {
                 mCurrentLocation = location;
                 mLastUpdateTime = DateFormat.getTimeInstance().format(new Date());
-//                updateUI();
                 if (!movedCameraToFirstUpdate) {
                     mMap.moveCamera(CameraUpdateFactory.newLatLng(new LatLng(mCurrentLocation.getLatitude(), mCurrentLocation.getLongitude())));
                     movedCameraToFirstUpdate = true;
@@ -625,19 +617,7 @@ public class MapsActivity extends FragmentActivity
         if (mCurrentLocation == null) {
             mCurrentLocation = LocationServices.FusedLocationApi.getLastLocation(mGoogleApiClient);
             mLastUpdateTime = DateFormat.getTimeInstance().format(new Date());
-            updateUI();
         }
-    }
-
-    private void updateUI() {
-        if (mCurrentLocation == null){
-            return;
-        }
-        String text = String.format("Lat: %f, Lng: %f, Update time: %s",
-                mCurrentLocation.getLatitude(),
-                mCurrentLocation.getLongitude(),
-                mLastUpdateTime);
-        Toast.makeText(MapsActivity.this, text, Toast.LENGTH_LONG).show();
     }
 
     private void showLocationAlert(final int activityResultCode) {
