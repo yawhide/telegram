@@ -288,11 +288,14 @@ public class MapsActivity extends FragmentActivity
                 Telegram telegram = null;
                 Boolean found = false;
 
-                for (String key : unlockedTelegrams.keySet()) {
-                    if (key.equals(marker.getId())) {
-                        telegram = unlockedTelegrams.get(key);
+                if (unlockedTelegrams.containsKey(marker.getId())) {
+                    telegram = unlockedTelegrams.get(marker.getId());
+                    found = true;
+                }
+                else if (lockedTelegrams.containsKey(marker.getId())) {
+                    if (lockedTelegrams.get(marker.getId()).getSeen()) {
+                        telegram = lockedTelegrams.get(marker.getId());
                         found = true;
-                        break;
                     }
                 }
 
