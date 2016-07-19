@@ -27,5 +27,6 @@ dependencies {
     compile 'com.google.android.gms:play-services-maps:9.0.2'
     compile 'com.google.android.gms:play-services-location:9.0.2'
     compile 'com.google.android.gms:play-services-auth:9.0.2'
+    compile 'com.google.maps.android:android-maps-utils:0.4+'
     compile 'com.squareup.okhttp3:okhttp:3.3.1'
 }

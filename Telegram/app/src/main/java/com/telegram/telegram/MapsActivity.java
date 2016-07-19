@@ -43,8 +43,15 @@ import com.google.android.gms.maps.model.BitmapDescriptorFactory;
 import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.Marker;
 import com.google.android.gms.maps.model.MarkerOptions;
+import com.google.maps.android.MarkerManager;
+import com.google.maps.android.SphericalUtil;
+import com.google.maps.android.clustering.Cluster;
+import com.google.maps.android.clustering.ClusterItem;
+import com.google.maps.android.clustering.ClusterManager;
+import com.google.maps.android.clustering.view.DefaultClusterRenderer;
 
 import java.io.IOException;
+import java.lang.reflect.Array;
 import java.text.DateFormat;
 import java.util.Date;
 import java.util.ArrayList;
@@ -95,10 +102,13 @@ public class MapsActivity extends FragmentActivity
     private static final int ANIMATION_DURATION = 500;
     private boolean movedCameraToFirstUpdate = false;
 
+    private ClusterManager<ClusterTelegram> telegramClusterManager;
+    private ArrayList<ClusterTelegram> telegramCluster;
+
     private FloatingActionButton fab;
 
-    private HashMap<String, Telegram> unlockedTelegrams = new HashMap<>();
-    private HashMap<String, Telegram> lockedTelegrams = new HashMap<>();
+//    private HashMap<String, Telegram> unlockedTelegrams = new HashMap<>();
+//    private HashMap<String, Telegram> lockedTelegrams = new HashMap<>();
 
     public static final MediaType JSON = MediaType.parse("application/json; charset=utf-8");
 
@@ -174,7 +184,6 @@ public class MapsActivity extends FragmentActivity
         setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_LOCKED);
     }
 
-
     @Override
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
 
@@ -206,8 +215,8 @@ public class MapsActivity extends FragmentActivity
                             @Override
                             public void run() {
                                 Log.d(TAG, responseData);
-                                String id = addTelegramToMap(telegram);
-                                unlockedTelegrams.put(id, telegram);
+                                addTelegramToMap(telegram);
+//                                unlockedTelegrams.put(telegram.getTid(), telegram);
                             }
                         });
                     }
@@ -257,7 +266,7 @@ public class MapsActivity extends FragmentActivity
                         // Read data on the worker thread
                         final String responseData = response.body().string();
                         telegram.setSeen(true);
-                        pollForNewTelegrams ();
+                        pollForNewTelegrams();
 
                         // Run view-related code back on the main thread
                         MapsActivity.this.runOnUiThread(new Runnable() {
@@ -271,9 +280,6 @@ public class MapsActivity extends FragmentActivity
             } catch (IOException e) {
                 e.printStackTrace();
             }
-
-
-
         }
     }
 
@@ -282,26 +288,66 @@ public class MapsActivity extends FragmentActivity
         mMap = googleMap;
         mMap.animateCamera(CameraUpdateFactory.zoomTo(GOOGLE_MAP_DEFAULT_ZOOM));
 
-        mMap.setOnMarkerClickListener(new GoogleMap.OnMarkerClickListener() {
+        telegramCluster = new ArrayList<ClusterTelegram>();
+        telegramClusterManager = new ClusterManager<ClusterTelegram>(this, mMap);
+        telegramClusterManager.setOnClusterClickListener(new ClusterManager.OnClusterClickListener<ClusterTelegram>() {
             @Override
-            public boolean onMarkerClick(Marker marker) {
-                Telegram telegram = null;
-                Boolean found = false;
+            public boolean onClusterClick(Cluster<ClusterTelegram> cluster) {
+                // create telegram listview
+                Log.i(TAG, "Map cluster clicked");
+                return false;
+            }
+        });
+//        telegramClusterManager.setOnClusterItemClickListener(new telegramClusterManager.onClusterItemClickListener() {
+//            @Override
+//            public boolean onMarkerClick(Marker marker) {
+//                Telegram telegram = null;
+//                Boolean found = false;
+//
+//                if (unlockedTelegrams.containsKey(marker.getId())) {
+//                    telegram = unlockedTelegrams.get(marker.getId());
+//                    found = true;
+//                }
+//                else if (lockedTelegrams.containsKey(marker.getId())) {
+//                    if (lockedTelegrams.get(marker.getId()).getSeen()) {
+//                        telegram = lockedTelegrams.get(marker.getId());
+//                        found = true;
+//                    }
+//                }
+//
+//                if (found) {
+//                    Intent i = new Intent(MapsActivity.this, ViewTelegram.class);
+//                    i.putExtra("telegram", telegram);
+//
+//                    startActivityForResult(i, 124);
+//                }
+//                else {
+//                    final CharSequence[] items = { "I understand" };
+//                    AlertDialog.Builder builder = new AlertDialog.Builder(MapsActivity.this);
+//                    builder.setTitle("You must be in a 1 mile radius to view this telegram.");
+//                    builder.setItems(items, new DialogInterface.OnClickListener() {
+//                        @Override
+//                        public void onClick(DialogInterface dialog, int item) {
+//
+//                            if (items[item].equals("I understand")) {
+//                                dialog.dismiss();
+//                            }
+//                        }
+//                    });
+//
+//                    builder.show();
+//                }
+//
+//                return true;
+//            }
+//        });
 
-                if (unlockedTelegrams.containsKey(marker.getId())) {
-                    telegram = unlockedTelegrams.get(marker.getId());
-                    found = true;
-                }
-                else if (lockedTelegrams.containsKey(marker.getId())) {
-                    if (lockedTelegrams.get(marker.getId()).getSeen()) {
-                        telegram = lockedTelegrams.get(marker.getId());
-                        found = true;
-                    }
-                }
-
-                if (found) {
+        telegramClusterManager.setOnClusterItemClickListener(new ClusterManager.OnClusterItemClickListener<ClusterTelegram>() {
+            @Override
+            public boolean onClusterItemClick(ClusterTelegram ct) {
+                if (!ct.isLocked()) {
                     Intent i = new Intent(MapsActivity.this, ViewTelegram.class);
-                    i.putExtra("telegram", telegram);
+                    i.putExtra("telegram", ct.getTelegram());
 
                     startActivityForResult(i, 124);
                 }
@@ -325,6 +371,17 @@ public class MapsActivity extends FragmentActivity
                 return true;
             }
         });
+        telegramClusterManager.setRenderer(new DefaultClusterRenderer<ClusterTelegram>(MapsActivity.this, mMap, telegramClusterManager) {
+
+            @Override
+            protected void onBeforeClusterItemRendered(ClusterTelegram ct, MarkerOptions markerOptions) {
+                float colour = ct.getSeen() ? BitmapDescriptorFactory.HUE_YELLOW : ct.isLocked() ? BitmapDescriptorFactory.HUE_RED : BitmapDescriptorFactory.HUE_GREEN;
+                markerOptions.icon(BitmapDescriptorFactory.defaultMarker(colour));
+                super.onBeforeClusterItemRendered(ct, markerOptions);
+            }
+        });
+        mMap.setOnCameraChangeListener(telegramClusterManager);
+        mMap.setOnMarkerClickListener(telegramClusterManager);
     }
 
 
@@ -424,16 +481,36 @@ public class MapsActivity extends FragmentActivity
 
                                         locked.add(telegram);
                                     }
-                                    unlockedTelegrams.clear();
-                                    lockedTelegrams.clear();
-                                    mMap.clear();
+
+//                                    unlockedTelegrams.clear();
+//                                    lockedTelegrams.clear();
+//                                    mMap.clear();
+
+                                    // prune telegrams that do not exist anymore
+                                    ArrayList<Telegram> telegrams = new ArrayList<Telegram>();
+                                    telegrams.addAll(locked);
+                                    telegrams.addAll(unlocked);
+                                    for(ClusterTelegram ct : telegramCluster) {
+                                        Boolean exists = false;
+                                        for (Telegram t : telegrams) {
+                                            if (ct.getTid().equals(t.getTid())) {
+                                                exists = true;
+                                                break;
+                                            }
+
+                                        }
+                                        if (!exists) {
+                                            telegramClusterManager.removeItem(ct);
+                                        }
+                                    }
+
                                     for (Telegram t : locked) {
-                                        String id = addTelegramToMap(t);
-                                        lockedTelegrams.put(id, t);
+                                        addTelegramToMap(t);
+//                                        lockedTelegrams.put(t.getTid(), t);
                                     }
                                     for (Telegram t : unlocked) {
-                                        String id = addTelegramToMap(t);
-                                        unlockedTelegrams.put(id, t);
+                                        addTelegramToMap(t);
+//                                        unlockedTelegrams.put(t.getTid(), t);
                                     }
 
                                 } catch (JSONException e) {
@@ -451,19 +528,27 @@ public class MapsActivity extends FragmentActivity
         });
     }
 
-
-
     /**
      * Adds a Telegram to the map and colours it according to unlockable or locked.
      * @param telegram
      */
-    private String addTelegramToMap(Telegram telegram) {
-        float colour = telegram.getSeen()? BitmapDescriptorFactory.HUE_YELLOW : telegram.isLocked() ? BitmapDescriptorFactory.HUE_RED : BitmapDescriptorFactory.HUE_GREEN;
-        Marker marker = mMap.addMarker(new MarkerOptions()
-                        .position(new LatLng(telegram.getLat(), telegram.getLng()))
-                        .icon(BitmapDescriptorFactory.defaultMarker(colour)));
+    private void addTelegramToMap(Telegram telegram) {
+        float colour = telegram.getSeen() ? BitmapDescriptorFactory.HUE_YELLOW : telegram.isLocked() ? BitmapDescriptorFactory.HUE_RED : BitmapDescriptorFactory.HUE_GREEN;
+//        Marker marker = mMap.addMarker(new MarkerOptions()
+//                        .position(new LatLng(telegram.getLat(), telegram.getLng()))
+//                        .icon(BitmapDescriptorFactory.defaultMarker(colour)));
+
 //                .icon(BitmapDescriptorFactory.fromResource(R.drawable.arrow))
-        return marker.getId();
+        for (ClusterTelegram t : telegramCluster) {
+            if (t.getTid().equals(telegram.getTid())) {
+                return;
+            }
+        }
+        ClusterTelegram t = new ClusterTelegram(telegram);
+        telegramCluster.add(t);
+        telegramClusterManager.addItem(t);
+
+//        return "";//marker.getId();
     }
 
     @Override

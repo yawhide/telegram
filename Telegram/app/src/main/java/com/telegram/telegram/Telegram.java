@@ -2,12 +2,15 @@ package com.telegram.telegram;
 
 import android.util.Log;
 
+import com.google.android.gms.maps.model.LatLng;
+import com.google.maps.android.clustering.ClusterItem;
+
 import java.io.Serializable;
 
 import okhttp3.FormBody;
 import okhttp3.RequestBody;
 
-public class Telegram implements Serializable{
+public class Telegram implements Serializable {
 
     private String uid;
     private String tid;
@@ -35,13 +38,6 @@ public class Telegram implements Serializable{
         this(uid, "", msg, img, lat, lng, locked);
     }
 
-    public void setSeen(Boolean seen) {
-        this.seen = seen;
-        if (this.seen) {
-            this.locked = false;
-        }
-    }
-
     public Boolean getSeen() {
         return this.seen;
     }
@@ -66,6 +62,17 @@ public class Telegram implements Serializable{
 
     public double getLng() {
         return lng;
+    }
+
+    public void setToLocked() { this.locked = true; }
+
+    public void setToUnlocked() { this.locked = false; }
+
+    public void setSeen(Boolean seen) {
+        this.seen = seen;
+        if (this.seen) {
+            this.locked = false;
+        }
     }
 
     public void setImg(String img) {
@@ -98,4 +105,5 @@ public class Telegram implements Serializable{
                 .add("lng", this.lng.toString())
                 .build();
     }
+
 }
