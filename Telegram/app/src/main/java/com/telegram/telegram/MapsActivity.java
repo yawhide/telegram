@@ -196,7 +196,7 @@ public class MapsActivity extends FragmentActivity
             RequestBody formBody = telegram.createDropFormBody();
 
             try {
-                post(SERVER_URI + "drop", formBody, new Callback() {
+                post(SERVER_URI + "telegrams/drop", formBody, new Callback() {
                     @Override
                     public void onFailure(Call call, IOException e) {
                         e.printStackTrace();

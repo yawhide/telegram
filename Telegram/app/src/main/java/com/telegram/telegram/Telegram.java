@@ -19,7 +19,6 @@ public class Telegram implements Serializable {
     private Double lat;
     private Double lng;
     private Boolean locked;
-    private Integer expiry;
     private Boolean seen;
 
     public Telegram(String uid, String tid, String msg, String img, Double lat, Double lng, Boolean locked) {
@@ -30,7 +29,6 @@ public class Telegram implements Serializable {
         this.lat = lat;
         this.lng = lng;
         this.locked = locked;
-        this.expiry = 172800;
         this.seen = false;
     }
 
@@ -86,7 +84,6 @@ public class Telegram implements Serializable {
         return new FormBody.Builder()
                 .add ("uid", uid)
                 .add ("tid", this.tid)
-                .add ("exp", this.expiry.toString())
                 .build();
     }
 

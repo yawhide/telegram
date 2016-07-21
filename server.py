@@ -3,20 +3,24 @@ from pymongo import MongoClient, GEO2D
 from bson.json_util import dumps,loads
 import json
 import pymongo
+import datetime
 
 import boto
 from boto.s3.key import Key
 from uuid import uuid4
 
 
+# 7 days
+expiry = 604800
+
 app = Flask(__name__)
 app.debug = True
-master_db = 'test_telgram5'
+master_db = 'test_telgram7'
 client = MongoClient()
 db = client[master_db]
 db.telegrams.create_index([("loc", '2dsphere')])
+db.telegrams.create_index([("date", pymongo.ASCENDING)], expireAfterSeconds=expiry)
 db.users.create_index([("uid", pymongo.ASCENDING), ("tid", pymongo.ASCENDING)], unique=True)
-db.expiry.create_index([("expiry", pymongo.ASCENDING)])
 
 AWS_ACCESS_KEY_ID = 'AKIAIVT3X6FRFZ4LP62Q'
 AWS_SECRET_ACCESS_KEY = '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'
@@ -27,11 +31,12 @@ bucket.set_acl('public-read')
 
 
 class Telegram (object):
-  def __init__ (self, uid, msg, img, lat, lng):
+  def __init__ (self, uid, msg, img, lat, lng, date):
     self.uid = uid
     self.msg = msg
     self.img = img
     self.loc = {"type":"Point", "coordinates": [float(lng),float(lat)]}
+    self.date = date
 
 @app.route('/users/all', methods = ['GET'])
 def get_users():
@@ -52,11 +57,9 @@ def get_all():
 def mark_telegram_seen():
   uid = request.form.get('uid')
   tid = request.form.get('tid')
-  exp = request.form.get('exp')
-
+  
   try:
     db.users.insert_one({'uid': uid, 'tid': tid})
-    db.expiry.insert_one({'tid': tid, 'expiry': exp})
   except:
     pass
 
@@ -98,7 +101,7 @@ def telegrams_within ():
   return dumps(data)
 
 
-@app.route('/drop', methods=['POST'])
+@app.route('/telegrams/drop', methods=['POST'])
 def drop_telegram():
   uid = request.form.get('uid')
   msg = request.form.get('msg')
@@ -106,14 +109,17 @@ def drop_telegram():
   lat = request.form.get('lat')
   lng = request.form.get ('lng')
   imgUrl = ''
-  if (img):
+
+  utc_timestamp = datetime.datetime.utcnow()
+
+  if img:
     s3key = str(uuid4())
     k = Key(bucket)
     k.key = s3key + '.jpg'
     k.set_contents_from_string(img.decode('base64'))
     imgUrl = 'https://s3-us-west-2.amazonaws.com/telegramimages/' + s3key + '.jpg'
 
-  telegram = Telegram (uid, msg, imgUrl, lat, lng)
+  telegram = Telegram (uid, msg, imgUrl, lat, lng, utc_timestamp)
   result = db.telegrams.insert_one(telegram.__dict__)
 
   return dumps(result.inserted_id)
