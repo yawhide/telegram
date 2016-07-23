@@ -16,4 +16,6 @@
     <color name="image_button">#FF80AB</color>
     <color name="text_colour">#FCE4EC</color>
     <color name="border_colour">#F8BBD0</color>
+    <color name="logout_colour">#FFFFFFFF</color>
+
 </resources>

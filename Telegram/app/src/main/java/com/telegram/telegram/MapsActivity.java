@@ -106,6 +106,8 @@ public class MapsActivity extends FragmentActivity
     private ArrayList<ClusterTelegram> telegramCluster;
 
     private FloatingActionButton fab;
+    private FloatingActionButton logoutFab;
+
 
 //    private HashMap<String, Telegram> unlockedTelegrams = new HashMap<>();
 //    private HashMap<String, Telegram> lockedTelegrams = new HashMap<>();
@@ -181,6 +183,16 @@ public class MapsActivity extends FragmentActivity
             }
         });
         fab.setEnabled(false);
+
+        logoutFab = (FloatingActionButton) findViewById(R.id.logout_fab);
+        logoutFab.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                // Logout, aka just finish this maps activity
+                finish();
+            }
+        });
+
         setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_LOCKED);
     }
 
