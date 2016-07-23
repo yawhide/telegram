@@ -75,15 +75,15 @@
     <LinearLayout
         android:orientation="vertical"
         android:layout_width="match_parent"
-        android:layout_height="match_parent">
+        android:layout_height="match_parent"
+        android:gravity="center_horizontal">
         <ImageView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:id="@+id/ImagePreview"
             android:layout_below="@+id/PostButton"
             android:layout_alignEnd="@+id/UploadImageButton"
-            android:scaleType="centerInside"
-            android:paddingBottom="10dp"/>
+            android:paddingBottom="5dp"/>
     </LinearLayout>
 
 

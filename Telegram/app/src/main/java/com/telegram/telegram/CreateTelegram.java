@@ -218,29 +218,20 @@ public class CreateTelegram extends Activity {
             }
         }
 
+        int origWidth = bm.getWidth();
+        int origHeight = bm.getHeight();
 
-        int width=1000;
-        int height=1000;
+        int destWidth = 300;
+        int destHeight = 300;
 
-        DisplayMetrics dm = new DisplayMetrics();
-        getWindowManager().getDefaultDisplay().getMetrics(dm);
+        if (origWidth > destWidth) {
+            // picture is wider than we want it, we calculate its target height
+            destHeight = origHeight / (origWidth / destWidth);
+        }
 
-        int newWidth = dm.widthPixels;
-        int newHeight= dm.heightPixels;
-
-        // Arbitrarily set the popup window height and width
-        getWindow().setLayout((int)(newWidth*0.8), (int)(newHeight*0.5));
-        //int inWidth = editText.getWidth();
-        //int inHeight = editText.getHeight();
-
-        //Log.d("t", "Width: " + inWidth + " -- height: " + inHeight);
-
-        Bitmap resizedbitmap=Bitmap.createScaledBitmap(bm, width, height, true);
-//        imagePreview.setImageBitmap(resizedbitmap);
-        imagePreview.setImageBitmap(bm);
-        imagePreview.setScaleType(ImageView.ScaleType.FIT_CENTER);
-        imagePreview.setMaxHeight(1000);
-        imagePreview.setMaxWidth(1000);
+        // we create an scaled bitmap so it reduces the image, not just trim it
+        Bitmap resizedbitmap = Bitmap.createScaledBitmap(bm, destWidth, destHeight, true);
+        imagePreview.setImageBitmap(resizedbitmap);
 
         //imagePreview.setImageBitmap(bm);
         String imageStr = getEncoded64ImageStringFromBitmap(bm);
@@ -277,7 +268,20 @@ public class CreateTelegram extends Activity {
             e.printStackTrace();
         }
 
-        imagePreview.setImageBitmap(thumbnail);
+        int origWidth = thumbnail.getWidth();
+        int origHeight = thumbnail.getHeight();
+
+        int destWidth = 300;
+        int destHeight = 300;
+
+        if (origWidth > destWidth) {
+            // picture is wider than we want it, we calculate its target height
+            destHeight = origHeight / (origWidth / destWidth);
+        }
+
+        // we create an scaled bitmap so it reduces the image, not just trim it
+        Bitmap resizedbitmap = Bitmap.createScaledBitmap(thumbnail, destWidth, destHeight, true);
+        imagePreview.setImageBitmap(resizedbitmap);
 
         // Convert the image to Base64
         byte[] byteFormat = bytes.toByteArray();
