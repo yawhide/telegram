@@ -60,7 +60,7 @@ public class CreateTelegram extends Activity {
         int height = dm.heightPixels;
 
         // Arbitrarily set the popup window height and width
-        getWindow().setLayout((int)(width*0.8), (int)(height*0.5));
+        getWindow().setLayout((int)(width*0.8), (int)(height*0.25));
 
         // Get the buttons and listen for them to be clicked
         cancelButton = (Button) findViewById(R.id.CancelButton);
@@ -218,7 +218,31 @@ public class CreateTelegram extends Activity {
             }
         }
 
+
+        int width=1000;
+        int height=1000;
+
+        DisplayMetrics dm = new DisplayMetrics();
+        getWindowManager().getDefaultDisplay().getMetrics(dm);
+
+        int newWidth = dm.widthPixels;
+        int newHeight= dm.heightPixels;
+
+        // Arbitrarily set the popup window height and width
+        getWindow().setLayout((int)(newWidth*0.8), (int)(newHeight*0.5));
+        //int inWidth = editText.getWidth();
+        //int inHeight = editText.getHeight();
+
+        //Log.d("t", "Width: " + inWidth + " -- height: " + inHeight);
+
+        Bitmap resizedbitmap=Bitmap.createScaledBitmap(bm, width, height, true);
+//        imagePreview.setImageBitmap(resizedbitmap);
         imagePreview.setImageBitmap(bm);
+        imagePreview.setScaleType(ImageView.ScaleType.FIT_CENTER);
+        imagePreview.setMaxHeight(1000);
+        imagePreview.setMaxWidth(1000);
+
+        //imagePreview.setImageBitmap(bm);
         String imageStr = getEncoded64ImageStringFromBitmap(bm);
         uploadedImage = imageStr;
     }

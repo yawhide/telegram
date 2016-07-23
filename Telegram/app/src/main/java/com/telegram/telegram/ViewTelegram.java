@@ -59,7 +59,7 @@ public class ViewTelegram extends Activity {
         if (!telegram.getImg().isEmpty()) {
             String imgURL = telegram.getImg();
 
-            new DownloadImageTask(imagePreview).execute(imgURL);
+            //new DownloadImageTask(imagePreview).execute(imgURL);
 
             getWindow().setLayout((int)(width), (int)(height));
         }
