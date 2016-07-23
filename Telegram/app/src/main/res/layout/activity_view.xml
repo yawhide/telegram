@@ -69,6 +69,7 @@
         android:layout_gravity="center"
         android:text="Okay"
         android:id="@+id/OkayButton"
+        android:backgroundTint="@color/post_button"
         />
 
 
