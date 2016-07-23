@@ -451,13 +451,13 @@ public class MapsActivity extends FragmentActivity
 
                                     for (int i = 0; i < seenTelegramsArray.length(); i++) {
                                         JSONObject telegramObj = seenTelegramsArray.getJSONObject(i);
-                                        if (!telegramObj.getString("uid").equals((user != null ? user.getEmail() : testUserEmail))) continue;
+//                                        if (!telegramObj.getString("uid").equals((user != null ? user.getEmail() : testUserEmail))) continue;
                                         seen.add(telegramObj.getString("tid"));
                                     }
 
                                     for (int i = 0; i < unlockedJsonArray.length(); i++) {
                                         JSONObject telegramObj = unlockedJsonArray.getJSONObject(i);
-                                        if (!telegramObj.getString("uid").equals((user != null ? user.getEmail() : testUserEmail))) continue;
+//                                        if (!telegramObj.getString("uid").equals((user != null ? user.getEmail() : testUserEmail))) continue;
                                         JSONObject tid = (JSONObject) telegramObj.get("_id");
                                         String strTid = (String) tid.get("$oid");
                                         Telegram telegram = new Telegram(
@@ -480,7 +480,7 @@ public class MapsActivity extends FragmentActivity
 
                                     for (int i = 0; i < lockedJsonArray.length(); i++) {
                                         JSONObject telegramObj = lockedJsonArray.getJSONObject(i);
-                                        if (!telegramObj.getString("uid").equals((user != null ? user.getEmail() : testUserEmail))) continue;
+//                                        if (!telegramObj.getString("uid").equals((user != null ? user.getEmail() : testUserEmail))) continue;
                                         JSONObject tid = (JSONObject) telegramObj.get("_id");
                                         String strTid = (String) tid.get("$oid");
                                         Telegram telegram = new Telegram(
