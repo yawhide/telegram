@@ -18,6 +18,11 @@
         <item name="android:windowCloseOnTouchOutside">true</item>
     </style>
 
+    <style name="AppTheme.TelegramList">
+        <item name="android:windowIsTranslucent">true</item>
+        <item name="android:windowCloseOnTouchOutside">true</item>
+    </style>
+
     <!-- Activity with no Title -->
     <style name="ThemeOverlay.MyNoTitleActivity" parent="AppTheme">
         <item name="windowActionBar">false</item>

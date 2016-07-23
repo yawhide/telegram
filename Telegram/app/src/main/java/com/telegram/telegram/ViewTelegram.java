@@ -23,9 +23,6 @@ import org.w3c.dom.Text;
 import java.io.InputStream;
 import java.net.URL;
 
-/**
- * Created by shayanmasood on 16-06-24.
- */
 public class ViewTelegram extends Activity {
 
     private TextView msg, uid, tid;
@@ -62,7 +59,7 @@ public class ViewTelegram extends Activity {
         if (!telegram.getImg().isEmpty()) {
             String imgURL = telegram.getImg();
 
-            new DownLoadImageTask(imagePreview).execute(imgURL);
+            new DownloadImageTask(imagePreview).execute(imgURL);
 
             getWindow().setLayout((int)(width), (int)(height));
         }
@@ -86,41 +83,41 @@ public class ViewTelegram extends Activity {
 
     }
 
-    private class DownLoadImageTask extends AsyncTask<String,Void,Bitmap> {
-        ImageView imageView;
-
-        public DownLoadImageTask(ImageView imageView){
-            this.imageView = imageView;
-        }
-
-        /*
-            doInBackground(Params... params)
-                Override this method to perform a computation on a background thread.
-         */
-        protected Bitmap doInBackground(String...urls){
-            String urlOfImage = urls[0];
-            Bitmap image = null;
-            try{
-                InputStream is = new URL(urlOfImage).openStream();
-                /*
-                    decodeStream(InputStream is)
-                        Decode an input stream into a bitmap.
-                 */
-                image = BitmapFactory.decodeStream(is);
-            }catch(Exception e){ // Catch the download exception
-                e.printStackTrace();
-            }
-            return image;
-        }
-
-        /*
-            onPostExecute(Result result)
-                Runs on the UI thread after doInBackground(Params...).
-         */
-        protected void onPostExecute(Bitmap result){
-            int nh = (int) ( result.getHeight() * (512.0 / result.getWidth()) );
-            Bitmap scaled = Bitmap.createScaledBitmap(result, 512, nh, true);
-            imageView.setImageBitmap(scaled);
-        }
-    }
+//    private class DownLoadImageTask extends AsyncTask<String,Void,Bitmap> {
+//        ImageView imageView;
+//
+//        public DownLoadImageTask(ImageView imageView){
+//            this.imageView = imageView;
+//        }
+//
+//        /*
+//            doInBackground(Params... params)
+//                Override this method to perform a computation on a background thread.
+//         */
+//        protected Bitmap doInBackground(String...urls){
+//            String urlOfImage = urls[0];
+//            Bitmap image = null;
+//            try{
+//                InputStream is = new URL(urlOfImage).openStream();
+//                /*
+//                    decodeStream(InputStream is)
+//                        Decode an input stream into a bitmap.
+//                 */
+//                image = BitmapFactory.decodeStream(is);
+//            }catch(Exception e){ // Catch the download exception
+//                e.printStackTrace();
+//            }
+//            return image;
+//        }
+//
+//        /*
+//            onPostExecute(Result result)
+//                Runs on the UI thread after doInBackground(Params...).
+//         */
+//        protected void onPostExecute(Bitmap result){
+//            int nh = (int) ( result.getHeight() * (512.0 / result.getWidth()) );
+//            Bitmap scaled = Bitmap.createScaledBitmap(result, 512, nh, true);
+//            imageView.setImageBitmap(scaled);
+//        }
+//    }
 }

@@ -294,7 +294,14 @@ public class MapsActivity extends FragmentActivity
             @Override
             public boolean onClusterClick(Cluster<ClusterTelegram> cluster) {
                 // create telegram listview
-                Log.i(TAG, "Map cluster clicked");
+                Log.i(TAG, "Map cluster clicked: " + cluster.getSize() + " items.");
+                ArrayList<Telegram> telegrams = new ArrayList<Telegram>();
+                for(ClusterTelegram ct : cluster.getItems()) {
+                    telegrams.add(ct.getTelegram());
+                }
+                Intent i = new Intent(MapsActivity.this, TelegramListActivity.class);
+                i.putExtra("telegrams", telegrams);
+                startActivityForResult(i, 125);
                 return false;
             }
         });
@@ -432,13 +439,13 @@ public class MapsActivity extends FragmentActivity
 
                                     for (int i = 0; i < seenTelegramsArray.length(); i++) {
                                         JSONObject telegramObj = seenTelegramsArray.getJSONObject(i);
-                                        if (telegramObj.getString("uid") == (user != null ? user.getEmail() : testUserEmail)) continue;
+                                        if (!telegramObj.getString("uid").equals((user != null ? user.getEmail() : testUserEmail))) continue;
                                         seen.add(telegramObj.getString("tid"));
                                     }
 
                                     for (int i = 0; i < unlockedJsonArray.length(); i++) {
                                         JSONObject telegramObj = unlockedJsonArray.getJSONObject(i);
-                                        if (telegramObj.getString("uid") == (user != null ? user.getEmail() : testUserEmail)) continue;
+                                        if (!telegramObj.getString("uid").equals((user != null ? user.getEmail() : testUserEmail))) continue;
                                         JSONObject tid = (JSONObject) telegramObj.get("_id");
                                         String strTid = (String) tid.get("$oid");
                                         Telegram telegram = new Telegram(
@@ -461,7 +468,7 @@ public class MapsActivity extends FragmentActivity
 
                                     for (int i = 0; i < lockedJsonArray.length(); i++) {
                                         JSONObject telegramObj = lockedJsonArray.getJSONObject(i);
-                                        if (telegramObj.getString("uid") == (user != null ? user.getEmail() : testUserEmail)) continue;
+                                        if (!telegramObj.getString("uid").equals((user != null ? user.getEmail() : testUserEmail))) continue;
                                         JSONObject tid = (JSONObject) telegramObj.get("_id");
                                         String strTid = (String) tid.get("$oid");
                                         Telegram telegram = new Telegram(
@@ -497,7 +504,6 @@ public class MapsActivity extends FragmentActivity
                                                 exists = true;
                                                 break;
                                             }
-
                                         }
                                         if (!exists) {
                                             telegramClusterManager.removeItem(ct);
