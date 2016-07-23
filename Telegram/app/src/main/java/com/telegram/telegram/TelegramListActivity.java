@@ -3,7 +3,9 @@ package com.telegram.telegram;
 import android.app.ListActivity;
 import android.content.Intent;
 import android.os.Bundle;
+import android.util.DisplayMetrics;
 import android.view.View;
+import android.view.WindowManager;
 import android.widget.ArrayAdapter;
 import android.widget.ListView;
 
@@ -30,6 +32,14 @@ public class TelegramListActivity extends ListActivity {
         // Attach the adapter to a ListView
 //        ListView listView = (ListView) findViewById(R.layout.telegram_list);
 //        listView.setAdapter(adapter);
+
+        DisplayMetrics dm = new DisplayMetrics();
+        getWindowManager().getDefaultDisplay().getMetrics(dm);
+
+        int width = dm.widthPixels;
+
+        getWindow().setLayout((int)(width*0.8), WindowManager.LayoutParams.WRAP_CONTENT);
+
     }
 
     @Override
