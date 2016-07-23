@@ -9,6 +9,7 @@ import android.os.Environment;
 import android.provider.MediaStore;
 import android.util.Base64;
 import android.util.DisplayMetrics;
+import android.view.WindowManager;
 import android.widget.Button;
 import android.widget.EditText;
 import android.view.View;
@@ -57,10 +58,9 @@ public class CreateTelegram extends Activity {
         getWindowManager().getDefaultDisplay().getMetrics(dm);
 
         int width = dm.widthPixels;
-        int height = dm.heightPixels;
 
         // Arbitrarily set the popup window height and width
-        getWindow().setLayout((int)(width*0.8), (int)(height*0.25));
+        getWindow().setLayout((int)(width*0.8), WindowManager.LayoutParams.WRAP_CONTENT);
 
         // Get the buttons and listen for them to be clicked
         cancelButton = (Button) findViewById(R.id.CancelButton);

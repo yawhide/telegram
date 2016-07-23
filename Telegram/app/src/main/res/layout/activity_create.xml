@@ -1,99 +1,90 @@
 <?xml version="1.0" encoding="utf-8"?>
-<RelativeLayout
+<LinearLayout
     xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
-    android:background="#ffffff"
-    tools:context=".CreateTelegram">
+    tools:context=".CreateTelegram"
+    android:background="@drawable/popup_border"
+    android:orientation="vertical">
 
-    <View
-        android:id="@+id/bottom_border"
+    <RelativeLayout
         android:layout_width="fill_parent"
-        android:layout_height="@dimen/border_width"
-        android:layout_alignParentBottom="true"
-        android:layout_centerHorizontal="true"
-        android:background="@color/border_colour" />
-
-    <View
-        android:id="@+id/top_border"
-        android:layout_width="fill_parent"
-        android:layout_height="@dimen/border_width"
-        android:layout_alignParentTop="true"
-        android:layout_centerHorizontal="true"
-        android:background="@color/border_colour" />
-
-    <View
-        android:id="@+id/left_border"
-        android:layout_width="@dimen/border_width"
-        android:layout_height="fill_parent"
-        android:layout_alignParentLeft="true"
-        android:layout_centerHorizontal="true"
-        android:background="@color/border_colour" />
-
-    <View
-        android:id="@+id/right_border"
-        android:layout_width="@dimen/border_width"
-        android:layout_height="fill_parent"
-        android:layout_alignParentRight="true"
-        android:layout_centerHorizontal="true"
-        android:background="@color/border_colour" />
-
-
-
-    <EditText
-        android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:id="@+id/TelegramMessage"
-        android:layout_alignParentTop="true"
-        android:layout_alignParentStart="true"
-        android:layout_marginLeft="10dp"
+        android:orientation="horizontal"
+        android:weightSum="1"
         android:layout_marginTop="10dp"
-        android:hint="Enter your Telegram"
-        android:autoText="false"
-        android:layout_toStartOf="@+id/PostButton"
-        android:maxLines="2"
-        android:maxLength="100"
-        android:inputType="textFilter|textWebEditText|textMultiLine" />
+        android:layout_marginEnd="10dp">
 
-    <Button
-        style="?android:attr/buttonStyleSmall"
+        <ImageButton
+            android:layout_width="50dp"
+            android:layout_height="50dp"
+            android:id="@+id/UploadImageButton"
+            android:src="@android:drawable/ic_menu_camera"
+            android:backgroundTint="@color/post_button"
+            android:adjustViewBounds="false"
+            android:baselineAlignBottom="false"
+            android:layout_alignParentEnd="false"
+            android:layout_alignParentStart="false"
+            android:layout_alignParentRight="true"/>
+
+
+
+        <EditText
+            android:layout_alignParentLeft="true"
+            android:layout_toLeftOf="@id/UploadImageButton"
+            android:layout_width="fill_parent"
+            android:layout_height="wrap_content"
+            android:id="@+id/TelegramMessage"
+            android:layout_alignParentTop="true"
+            android:layout_alignParentStart="false"
+            android:layout_marginStart="10dp"
+            android:hint="Enter your Telegram"
+            android:maxLines="2"
+            android:maxLength="100"
+            android:inputType="textFilter|textWebEditText|textMultiLine"
+            android:layout_alignParentEnd="false" />
+
+    </RelativeLayout>
+
+    <RelativeLayout
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="Cancel"
-        android:id="@+id/CancelButton"
-        android:layout_marginTop="23dp"
-        android:layout_below="@+id/TelegramMessage"
-        android:layout_alignStart="@+id/TelegramMessage"
-        android:layout_alignParentStart="false" />
+        android:layout_marginEnd="10dp"
+        android:layout_marginStart="10dp">
+        <Button
+            style="?android:attr/buttonStyleSmall"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Cancel"
+            android:id="@+id/CancelButton"
+            android:layout_alignParentStart="false" />
+        <Button
+            style="?android:attr/buttonStyleSmall"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Post"
+            android:id="@+id/PostButton"
+            android:layout_alignTop="@+id/CancelButton"
+            android:layout_alignParentEnd="true"
+            android:backgroundTint="@color/post_button"
+            android:textColor="@color/text_colour" />
 
-    <Button
-        style="?android:attr/buttonStyleSmall"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="Post"
-        android:id="@+id/PostButton"
-        android:layout_marginRight="10dp"
-        android:layout_alignTop="@+id/CancelButton"
-        android:layout_alignParentEnd="true"
-        android:backgroundTint="@color/post_button"
-        android:textColor="@color/text_colour"/>
+    </RelativeLayout>
 
-    <ImageButton
-        android:layout_width="50dp"
-        android:layout_height="50dp"
-        android:id="@+id/UploadImageButton"
-        android:src="@android:drawable/ic_menu_camera"
-        android:backgroundTint="@color/post_button"
-        android:layout_alignTop="@+id/TelegramMessage"
-        android:layout_alignEnd="@+id/PostButton" />
+    <LinearLayout
+        android:orientation="vertical"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent">
+        <ImageView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:id="@+id/ImagePreview"
+            android:layout_below="@+id/PostButton"
+            android:layout_alignEnd="@+id/UploadImageButton"
+            android:scaleType="centerInside"
+            android:paddingBottom="10dp"/>
+    </LinearLayout>
 
-    <ImageView
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:id="@+id/ImagePreview"
-        android:layout_below="@+id/PostButton"
-        android:layout_alignEnd="@+id/UploadImageButton"
-        android:scaleType="centerInside"
-        android:paddingBottom="10dp"/>
-</RelativeLayout>
+
+</LinearLayout>
