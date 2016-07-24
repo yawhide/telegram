@@ -201,7 +201,8 @@ public class MapsActivity extends FragmentActivity
 //                                Log.d("t", "signedout " + status);
 //                            }
 //                        });
-
+                Intent i = new Intent(MapsActivity.this, LoginActivity.class);
+                startActivity(i);
                 finish();
             }
 
