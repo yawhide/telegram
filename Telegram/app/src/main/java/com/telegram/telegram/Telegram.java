@@ -21,6 +21,17 @@ public class Telegram implements Serializable {
     private Boolean locked;
     private Boolean seen;
 
+    Telegram (Telegram t) {
+        this.uid = t.uid;
+        this.tid = t.tid;
+        this.msg = t.msg;
+        this.img = t.img;
+        this.lat = t.lat;
+        this.lng = t.lng;
+        this.locked = t.locked;
+        this.seen = t.seen;
+    }
+
     public Telegram(String uid, String tid, String msg, String img, Double lat, Double lng, Boolean locked) {
         this.uid = uid;
         this.tid = tid;

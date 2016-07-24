@@ -49,10 +49,7 @@ def get_all():
   cursor = coll.find()
   return dumps(cursor)
 
-# Really badly done right now. Must fix.
-# Have created a compound index on uid, tid to prevent duplicates in our users db
-# However, if a dup call is made, it throws an exception and doesn't insert
-# Server keeps running
+
 @app.route('/telegrams/seen', methods=['POST'])
 def mark_telegram_seen():
   uid = request.form.get('uid')
