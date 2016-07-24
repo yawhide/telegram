@@ -309,7 +309,38 @@ public class MapsActivity extends FragmentActivity
                 Log.i(TAG, "Map cluster clicked: " + cluster.getSize() + " items.");
                 ArrayList<Telegram> telegrams = new ArrayList<Telegram>();
                 for(ClusterTelegram ct : cluster.getItems()) {
-                    telegrams.add(ct.getTelegram());
+                    final Telegram telegram = ct.getTelegram();
+                    telegrams.add(telegram);
+                    RequestBody formBody = telegram.createSeenFormBody(user != null ? user.getEmail() : testUserEmail);
+                    try {
+                        post(SERVER_URI + "telegrams/seen", formBody, new Callback() {
+                            @Override
+                            public void onFailure(Call call, IOException e) {
+                                e.printStackTrace();
+                            }
+
+                            @Override
+                            public void onResponse(Call call, final Response response) throws IOException {
+                                if (!response.isSuccessful()) {
+                                    throw new IOException("Unexpected code " + response);
+                                }
+                                // Read data on the worker thread
+                                final String responseData = response.body().string();
+                                telegram.setSeen(true);
+                                pollForNewTelegrams();
+
+                                // Run view-related code back on the main thread
+                                MapsActivity.this.runOnUiThread(new Runnable() {
+                                    @Override
+                                    public void run() {
+                                        Log.d(TAG, responseData);
+                                    }
+                                });
+                            }
+                        });
+                    } catch (IOException e) {
+                        e.printStackTrace();
+                    }
                 }
                 Intent i = new Intent(MapsActivity.this, TelegramListActivity.class);
                 i.putExtra("telegrams", telegrams);
