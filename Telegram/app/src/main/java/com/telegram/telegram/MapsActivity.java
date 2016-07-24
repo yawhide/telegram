@@ -228,6 +228,7 @@ public class MapsActivity extends FragmentActivity
                             public void run() {
                                 Log.d(TAG, responseData);
                                 addTelegramToMap(telegram);
+                                telegramClusterManager.cluster();
 //                                unlockedTelegrams.put(telegram.getTid(), telegram);
                             }
                         });
