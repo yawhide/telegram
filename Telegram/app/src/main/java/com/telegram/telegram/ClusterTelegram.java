@@ -8,6 +8,11 @@ public class ClusterTelegram implements ClusterItem {
     private LatLng mPosition;
     private Telegram t;
 
+    ClusterTelegram (ClusterTelegram t) {
+        this.mPosition = t.mPosition;
+        this.t = t.getTelegram();
+    }
+
     public ClusterTelegram(Telegram telegram) {
         this.t = telegram;
         this.mPosition = new LatLng(telegram.getLat(), telegram.getLng());
@@ -30,4 +35,7 @@ public class ClusterTelegram implements ClusterItem {
         return mPosition;
     }
 
+    public void setSeen(boolean seen) {
+        this.t.setSeen(seen);
+    }
 }

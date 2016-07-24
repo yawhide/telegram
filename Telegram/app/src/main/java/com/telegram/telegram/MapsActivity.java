@@ -308,7 +308,7 @@ public class MapsActivity extends FragmentActivity
                 // create telegram listview
                 Log.i(TAG, "Map cluster clicked: " + cluster.getSize() + " items.");
                 ArrayList<Telegram> telegrams = new ArrayList<Telegram>();
-                for(ClusterTelegram ct : cluster.getItems()) {
+                for(final ClusterTelegram ct : cluster.getItems()) {
                     final Telegram telegram = ct.getTelegram();
                     telegrams.add(telegram);
                     RequestBody formBody = telegram.createSeenFormBody(user != null ? user.getEmail() : testUserEmail);
@@ -326,7 +326,10 @@ public class MapsActivity extends FragmentActivity
                                 }
                                 // Read data on the worker thread
                                 final String responseData = response.body().string();
-                                telegram.setSeen(true);
+                                ct.setSeen(true);
+                                ClusterTelegram copyCt = new ClusterTelegram(ct);
+                                telegramClusterManager.removeItem(ct);
+                                telegramClusterManager.addItem(copyCt);
                                 pollForNewTelegrams();
 
                                 // Run view-related code back on the main thread
@@ -394,11 +397,44 @@ public class MapsActivity extends FragmentActivity
 
         telegramClusterManager.setOnClusterItemClickListener(new ClusterManager.OnClusterItemClickListener<ClusterTelegram>() {
             @Override
-            public boolean onClusterItemClick(ClusterTelegram ct) {
+            public boolean onClusterItemClick(final ClusterTelegram ct) {
                 if (!ct.isLocked()) {
                     Intent i = new Intent(MapsActivity.this, ViewTelegram.class);
-                    i.putExtra("telegram", ct.getTelegram());
+                    final Telegram telegram = ct.getTelegram();
+                    i.putExtra("telegram", telegram);
+                    RequestBody formBody = telegram.createSeenFormBody(user != null ? user.getEmail() : testUserEmail);
+                    try {
+                        post(SERVER_URI + "telegrams/seen", formBody, new Callback() {
+                            @Override
+                            public void onFailure(Call call, IOException e) {
+                                e.printStackTrace();
+                            }
 
+                            @Override
+                            public void onResponse(Call call, final Response response) throws IOException {
+                                if (!response.isSuccessful()) {
+                                    throw new IOException("Unexpected code " + response);
+                                }
+                                // Read data on the worker thread
+                                final String responseData = response.body().string();
+                                ct.setSeen(true);
+                                ClusterTelegram copyCt = new ClusterTelegram(ct);
+                                telegramClusterManager.removeItem(ct);
+                                telegramClusterManager.addItem(copyCt);
+                                pollForNewTelegrams();
+
+                                // Run view-related code back on the main thread
+                                MapsActivity.this.runOnUiThread(new Runnable() {
+                                    @Override
+                                    public void run() {
+                                        Log.d(TAG, responseData);
+                                    }
+                                });
+                            }
+                        });
+                    } catch (IOException e) {
+                        e.printStackTrace();
+                    }
                     startActivityForResult(i, 124);
                 }
                 else {
