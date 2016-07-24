@@ -278,6 +278,7 @@ public class MapsActivity extends FragmentActivity
                         // Read data on the worker thread
                         final String responseData = response.body().string();
                         telegram.setSeen(true);
+                        telegramClusterManager.cluster();
                         pollForNewTelegrams();
 
                         // Run view-related code back on the main thread
@@ -330,6 +331,7 @@ public class MapsActivity extends FragmentActivity
                                 ClusterTelegram copyCt = new ClusterTelegram(ct);
                                 telegramClusterManager.removeItem(ct);
                                 telegramClusterManager.addItem(copyCt);
+                                telegramClusterManager.cluster();
                                 pollForNewTelegrams();
 
                                 // Run view-related code back on the main thread
@@ -421,6 +423,7 @@ public class MapsActivity extends FragmentActivity
                                 ClusterTelegram copyCt = new ClusterTelegram(ct);
                                 telegramClusterManager.removeItem(ct);
                                 telegramClusterManager.addItem(copyCt);
+                                telegramClusterManager.cluster();
                                 pollForNewTelegrams();
 
                                 // Run view-related code back on the main thread
@@ -597,6 +600,7 @@ public class MapsActivity extends FragmentActivity
                                         addTelegramToMap(t);
 //                                        unlockedTelegrams.put(t.getTid(), t);
                                     }
+                                    telegramClusterManager.cluster();
 
                                 } catch (JSONException e) {
                                     e.printStackTrace();
