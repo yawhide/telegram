@@ -21,7 +21,9 @@ import android.util.Log;
 import android.view.View;
 import android.widget.Toast;
 
+import com.google.android.gms.auth.api.Auth;
 import com.google.android.gms.auth.api.signin.GoogleSignInAccount;
+import com.google.android.gms.auth.api.signin.GoogleSignInOptions;
 import com.google.android.gms.common.ConnectionResult;
 import com.google.android.gms.common.api.GoogleApiClient;
 import com.google.android.gms.common.api.PendingResult;
@@ -108,7 +110,6 @@ public class MapsActivity extends FragmentActivity
     private FloatingActionButton fab;
     private FloatingActionButton logoutFab;
 
-
 //    private HashMap<String, Telegram> unlockedTelegrams = new HashMap<>();
 //    private HashMap<String, Telegram> lockedTelegrams = new HashMap<>();
 
@@ -127,8 +128,9 @@ public class MapsActivity extends FragmentActivity
 
     /**
      * Performs get request given a URL and calls the callback.
+     *
      * @param url String
-     * @param cb Callback
+     * @param cb  Callback
      */
     void get(String url, final Callback cb) {
 
@@ -164,9 +166,9 @@ public class MapsActivity extends FragmentActivity
         buildGoogleApiClient();
 
         if (Build.VERSION.SDK_INT >= 23
-                && ActivityCompat.checkSelfPermission(MapsActivity.this, android.Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED
-                && ActivityCompat.checkSelfPermission(MapsActivity.this, android.Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
-            ActivityCompat.requestPermissions(MapsActivity.this, new String[] { Manifest.permission.ACCESS_FINE_LOCATION, Manifest.permission.ACCESS_COARSE_LOCATION}, CHECK_LOCATION_ON_CREATE);
+                && ActivityCompat.checkSelfPermission(MapsActivity.this, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED
+                && ActivityCompat.checkSelfPermission(MapsActivity.this, Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
+            ActivityCompat.requestPermissions(MapsActivity.this, new String[]{Manifest.permission.ACCESS_FINE_LOCATION, Manifest.permission.ACCESS_COARSE_LOCATION}, CHECK_LOCATION_ON_CREATE);
         }
         createLocationRequest();
         createLocationListener();
@@ -189,8 +191,20 @@ public class MapsActivity extends FragmentActivity
             @Override
             public void onClick(View view) {
                 // Logout, aka just finish this maps activity
+                Log.d("t", "clicked sign out");
+                Auth.GoogleSignInApi.signOut(mGoogleApiClient);
+
+//                Auth.GoogleSignInApi.signOut(mGoogleApiClient).setResultCallback(
+//                        new ResultCallback<Status>() {
+//                            @Override
+//                            public void onResult(Status status) {
+//                                Log.d("t", "signedout " + status);
+//                            }
+//                        });
+
                 finish();
             }
+
         });
 
         setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_LOCKED);
@@ -259,8 +273,7 @@ public class MapsActivity extends FragmentActivity
             } else {
                 checkLocationSettings(CHECK_SETTINGS_INITIALIZE_LOCATION);
             }
-        }
-        else if (requestCode == 124) {
+        } else if (requestCode == 124) {
             final Telegram telegram = (Telegram) data.getExtras().get("telegram");
 
             RequestBody formBody = telegram.createSeenFormBody(user != null ? user.getEmail() : testUserEmail);
@@ -310,7 +323,7 @@ public class MapsActivity extends FragmentActivity
                 // create telegram listview
                 Log.i(TAG, "Map cluster clicked: " + cluster.getSize() + " items.");
                 ArrayList<Telegram> telegrams = new ArrayList<Telegram>();
-                for(final ClusterTelegram ct : cluster.getItems()) {
+                for (final ClusterTelegram ct : cluster.getItems()) {
                     final Telegram telegram = ct.getTelegram();
                     telegrams.add(telegram);
                     RequestBody formBody = telegram.createSeenFormBody(user != null ? user.getEmail() : testUserEmail);
@@ -442,9 +455,8 @@ public class MapsActivity extends FragmentActivity
                         e.printStackTrace();
                     }
                     startActivityForResult(i, 124);
-                }
-                else {
-                    final CharSequence[] items = { "I understand" };
+                } else {
+                    final CharSequence[] items = {"I understand"};
                     AlertDialog.Builder builder = new AlertDialog.Builder(MapsActivity.this);
                     builder.setTitle("You must be in a 1 mile radius to view this telegram.");
                     builder.setItems(items, new DialogInterface.OnClickListener() {
@@ -520,7 +532,7 @@ public class MapsActivity extends FragmentActivity
                                     ArrayList<Telegram> unlocked = new ArrayList<Telegram>();
                                     ArrayList<Telegram> locked = new ArrayList<Telegram>();
 
-                                    Set<String> seen  = new TreeSet<String>();
+                                    Set<String> seen = new TreeSet<String>();
 
                                     for (int i = 0; i < seenTelegramsArray.length(); i++) {
                                         JSONObject telegramObj = seenTelegramsArray.getJSONObject(i);
@@ -544,7 +556,7 @@ public class MapsActivity extends FragmentActivity
 
                                         if (seen.contains(strTid)) {
                                             telegram.setSeen(true);
-                                        } else{
+                                        } else {
                                             telegram.setSeen(false);
                                         }
 
@@ -567,7 +579,7 @@ public class MapsActivity extends FragmentActivity
 
                                         if (seen.contains(strTid)) {
                                             telegram.setSeen(true);
-                                        } else{
+                                        } else {
                                             telegram.setSeen(false);
                                         }
 
@@ -582,7 +594,7 @@ public class MapsActivity extends FragmentActivity
                                     ArrayList<Telegram> telegrams = new ArrayList<Telegram>();
                                     telegrams.addAll(locked);
                                     telegrams.addAll(unlocked);
-                                    for(ClusterTelegram ct : telegramCluster) {
+                                    for (ClusterTelegram ct : telegramCluster) {
                                         Boolean exists = false;
                                         for (Telegram t : telegrams) {
                                             if (ct.getTid().equals(t.getTid())) {
@@ -619,7 +631,7 @@ public class MapsActivity extends FragmentActivity
                         e.printStackTrace();
                     }
                 } catch (IOException e) {
-                     e.printStackTrace();
+                    e.printStackTrace();
                 }
             }
         });
@@ -627,6 +639,7 @@ public class MapsActivity extends FragmentActivity
 
     /**
      * Adds a Telegram to the map and colours it according to unlockable or locked.
+     *
      * @param telegram
      */
     private void addTelegramToMap(Telegram telegram) {
@@ -701,10 +714,16 @@ public class MapsActivity extends FragmentActivity
 
     protected synchronized void buildGoogleApiClient() {
         Log.i(TAG, "Building GoogleApiClient");
+
+        GoogleSignInOptions gso = new GoogleSignInOptions.Builder(GoogleSignInOptions.DEFAULT_SIGN_IN)
+                .requestEmail()
+                .build();
+
         mGoogleApiClient = new GoogleApiClient.Builder(this)
                 .addConnectionCallbacks(this)
                 .addOnConnectionFailedListener(this)
                 .addApi(LocationServices.API)
+                .addApi(Auth.GOOGLE_SIGN_IN_API, gso)
                 .build();
         mGoogleApiClient.connect();
     }
@@ -744,9 +763,9 @@ public class MapsActivity extends FragmentActivity
                             getLastLocation();
                         } else if (activityResultCode == CHECK_SETTINGS_INITIALIZE_LOCATION) {
                             if (Build.VERSION.SDK_INT >= 23
-                                    && ActivityCompat.checkSelfPermission(MapsActivity.this, android.Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED
-                                    && ActivityCompat.checkSelfPermission(MapsActivity.this, android.Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
-                                ActivityCompat.requestPermissions(MapsActivity.this, new String[] { Manifest.permission.ACCESS_FINE_LOCATION, Manifest.permission.ACCESS_COARSE_LOCATION}, activityResultCode);
+                                    && ActivityCompat.checkSelfPermission(MapsActivity.this, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED
+                                    && ActivityCompat.checkSelfPermission(MapsActivity.this, Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
+                                ActivityCompat.requestPermissions(MapsActivity.this, new String[]{Manifest.permission.ACCESS_FINE_LOCATION, Manifest.permission.ACCESS_COARSE_LOCATION}, activityResultCode);
                             }
                             mMap.setMyLocationEnabled(true);
                             getLastLocation();
