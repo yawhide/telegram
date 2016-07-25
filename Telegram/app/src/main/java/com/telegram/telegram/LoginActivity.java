@@ -8,6 +8,7 @@ import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
 import android.view.View;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import com.google.android.gms.auth.api.Auth;
 import com.google.android.gms.auth.api.signin.GoogleSignInAccount;
@@ -125,6 +126,9 @@ public class LoginActivity extends AppCompatActivity implements
             Intent i = new Intent(this, MapsActivity.class);
             i.putExtra("oath", result.getSignInAccount());
             startActivityForResult(i, 69);
+
+            Toast t = Toast.makeText(this, "Logged in as: " + result.getSignInAccount().getEmail(), Toast.LENGTH_LONG);
+            t.show();
             finish();
         }
 

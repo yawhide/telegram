@@ -459,7 +459,9 @@ public class MapsActivity extends FragmentActivity
                 } else {
                     final CharSequence[] items = {"I understand"};
                     AlertDialog.Builder builder = new AlertDialog.Builder(MapsActivity.this);
+                    double distance = SphericalUtil.computeDistanceBetween(new LatLng(mCurrentLocation.getLatitude(), mCurrentLocation.getLongitude()), ct.getPosition());
                     builder.setTitle("You must be in a 1 mile radius to view this telegram.");
+                    builder.setMessage("Please walk " + Math.round((distance-1609.34)/3.28084) + " feet to unlock this telegram.");
                     builder.setItems(items, new DialogInterface.OnClickListener() {
                         @Override
                         public void onClick(DialogInterface dialog, int item) {

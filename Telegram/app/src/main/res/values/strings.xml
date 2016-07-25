@@ -1,5 +1,5 @@
 <resources>
-    <string name="app_name">Telegram</string>
+    <string name="app_name">Telex</string>
     <string name="title_activity_maps">Map</string>
     <string name="google_maps_key">AIzaSyBMF3khL8rZi4N6-Q686W3Dn6BMh_qXeEo</string>
     <string name="title_activity_login">Sign in</string>
