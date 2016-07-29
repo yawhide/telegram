@@ -22,8 +22,8 @@ db.telegrams.create_index([("loc", '2dsphere')])
 db.telegrams.create_index([("date", pymongo.ASCENDING)], expireAfterSeconds=expiry)
 db.users.create_index([("uid", pymongo.ASCENDING), ("tid", pymongo.ASCENDING)], unique=True)
 
-AWS_ACCESS_KEY_ID = 'AKIAIVT3X6FRFZ4LP62Q'
-AWS_SECRET_ACCESS_KEY = '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'
+AWS_ACCESS_KEY_ID = ''
+AWS_SECRET_ACCESS_KEY = ''
 
 conn = boto.connect_s3(AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY)
 bucket = conn.get_bucket('telegramimages')
